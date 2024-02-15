@@ -1,0 +1,39 @@
+{
+  "name": "tezkafe-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "author": "Abbos Rakhmonov",
+  "license": "MIT",
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "colors": "^1.4.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.2",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "helmet": "^7.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "mime": "^4.0.1",
+    "mongoose": "^8.1.1",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "qr-image": "^3.2.0",
+    "sharp": "^0.33.2",
+    "socket.io": "^4.7.4",
+    "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0",
+    "nodemon": "^3.0.3"
+  }
+}
