@@ -13,6 +13,6 @@ router.post('/login', login);
 router.get('/me', protect, authorize(['director', 'waiter']), getMe);
 router.put('/me', protect, authorize(['director', 'waiter']), updateDetails);
 router.put('/password', protect, authorize('director', 'waiter'), updatePassword);
-router.put('/logout', protect, authorize('director', 'waiter'), logout);
+router.get('/logout', protect, authorize('director', 'waiter'), logout);
 
 module.exports = router;
