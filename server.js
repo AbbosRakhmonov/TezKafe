@@ -122,7 +122,7 @@ app.use("/api/v1/approved/orders", approvedOrder);
 
 // Set static folder
 app.use("/uploads", [
-    cors(corsOptions),
+    cors(corsOptions()),
     protect,
     express.static(path.join(__dirname, "uploads")),
 ]);
