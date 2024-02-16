@@ -27,7 +27,7 @@ exports.createTable = asyncHandler(async (req, res, next) => {
 
     // generate qr code for table and save it to public folder
     let hostname = req.headers.host;
-    const qr_svg = qr.imageSync(`${hostname}/tables/${table._id}`, {type: 'png'});
+    const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
     let imagePath = path.join(__dirname, `../public/${table._id}.png`);
     try {
         fs.writeFileSync(imagePath, qr_svg);
@@ -77,8 +77,8 @@ exports.getTable = asyncHandler(async (req, res, next) => {
 // @route     GET /api/v1/tables?type=type&occupied=occupied
 // @access    Private
 exports.getTables = asyncHandler(async (req, res, next) => {
-    const {restaurant, occupied} = req.user;
-    const {type} = req.query;
+    const {restaurant} = req.user;
+    const {type, occupied} = req.query;
 
     let filter = {
         restaurant
@@ -278,7 +278,7 @@ exports.loginToTable = asyncHandler(async (req, res, next) => {
 // @access    Private
 exports.callWaiter = asyncHandler(async (req, res, next) => {
     const {code} = req.body;
-    const {restaurant, id} = req.params;
+    const {id} = req.params;
     const table = await Table.findOne({
         restaurant,
         _id: id,

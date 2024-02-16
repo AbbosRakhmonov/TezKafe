@@ -198,7 +198,7 @@ exports.addProductToBasket = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/client/basket/:id
 // @access  Private
 exports.updateProductInBasket = asyncHandler(async (req, res, next) => {
-    const {restaurant, table, code, basketId} = req.body;
+    const {restaurant, table, code, product} = req.body;
     if (!restaurant)
         return next(new ErrorResponse('Please provide restaurant', 400));
 
@@ -220,7 +220,7 @@ exports.updateProductInBasket = asyncHandler(async (req, res, next) => {
     const basket = await Basket.findOne({
         restaurant,
         table,
-        _id: basketId
+        _id: req.params.id
     });
 
     if (!basket)
@@ -250,7 +250,7 @@ exports.updateProductInBasket = asyncHandler(async (req, res, next) => {
 // @route     DELETE /api/v1/client/basket/:id?restaurant=restaurant&table=table&code=code
 // @access    Private
 exports.removeProductFromBasket = asyncHandler(async (req, res, next) => {
-    const {restaurant, table, code} = req.body;
+    const {restaurant, table, code, product} = req.body;
     if (!restaurant)
         return next(new ErrorResponse('Please provide restaurant', 400));
 
@@ -272,12 +272,13 @@ exports.removeProductFromBasket = asyncHandler(async (req, res, next) => {
     const basket = await Basket.findOne({
         restaurant,
         table,
+        _id: req.params.id
     });
 
     if (!basket)
         return next(new ErrorResponse('Basket not found', 404));
 
-    const productIndex = basket.products.findIndex(product => product._id.toString() === req.params.id);
+    const productIndex = basket.products.findIndex(p => p._id.toString() === product.toString());
 
     if (productIndex === -1)
         return next(new ErrorResponse('Product not found', 404));

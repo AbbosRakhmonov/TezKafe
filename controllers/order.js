@@ -111,7 +111,7 @@ exports.updateOrder = asyncHandler(async (req, res, next) => {
     let activeOrder = await ActiveOrder.findOne({
         table,
         restaurant,
-        waiter: id
+        waiter: id,
     });
 
     if (!activeOrder) {
@@ -216,6 +216,7 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
     }
 
     let activeOrder = await ActiveOrder.findOne({
+        _id: id,
         table,
         restaurant,
         waiter
