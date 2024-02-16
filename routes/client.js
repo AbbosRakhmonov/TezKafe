@@ -6,7 +6,8 @@ const {
     getClientOrders,
     makeOrder,
     removeProductFromBasket,
-    updateProductInBasket
+    updateProductInBasket,
+    getBasket
 } = require('../controllers/client');
 
 router
@@ -16,6 +17,7 @@ router
 
 router
     .route('/basket')
+    .get(getBasket)
     .post(addProductToBasket)
     .delete(clearBasket)
 

@@ -118,6 +118,37 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     res.status(200).json(data);
 });
 
+// @desc      Get Basket
+// @route     GET /api/v1/client/basket?restaurant=restaurant&table=table&code=code
+// @access    Private
+exports.getBasket = asyncHandler(async (req, res, next) => {
+    const {restaurant, table, code} = req.query;
+    if (!restaurant)
+        return next(new ErrorResponse('Please provide restaurant', 400));
+
+    if (!table)
+        return next(new ErrorResponse('Please provide table', 400));
+
+    if (!code)
+        return next(new ErrorResponse('Please provide code', 400));
+
+    const tableData = await Table.findOne({
+        restaurant,
+        _id: table,
+        code
+    })
+
+    if (!tableData)
+        return next(new ErrorResponse('Table not found', 404));
+
+    const basket = await Basket.findOne({
+        restaurant,
+        table,
+    }).populate('products.product');
+
+    res.status(200).json(basket);
+});
+
 // @desc      Add product to Basket
 // @route     POST /api/v1/client/basket
 // @access    Private
