@@ -139,14 +139,18 @@ exports.getWaiterOrders = asyncHandler(async (req, res, next) => {
 });
 
 // @desc      Occupy table
-// @route     PUT /api/v1/waiter/tables/:id
+// @route     PUT /api/v1/waiter/tables
 // @access    Private
 exports.occupyTable = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
 
+    if (!req.body.table) {
+        return next(new ErrorResponse('Please provide a table', 400));
+    }
+
     const table = await Table.findOne({
         restaurant,
-        _id: req.params.id
+        _id: req.body.table
     }).populate('waiter archiveOrders activeOrders totalOrders activePrice activeItems totalPrice totalItems')
 
 
@@ -219,7 +223,6 @@ exports.getCalls = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
 
     // get all calls belongs to the waiter and calls that waiter can accept and calls that without waiter or callId
-
     const calls = await Table.find({
         restaurant,
         $or: [
@@ -247,6 +250,7 @@ exports.declineCall = asyncHandler(async (req, res, next) => {
     if (!table) {
         return next(new ErrorResponse('Table not found', 404));
     }
+
 
     table.call = 'none'
     table.callId = null

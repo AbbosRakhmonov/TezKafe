@@ -35,18 +35,15 @@ router
 router
     .route('/tables')
     .get(protect, isWaiterAtRestaurant, getWaiterTables)
+    .post(protect, isWaiterAtRestaurant, occupyTable);
 
 router
-    .route('/tables/:id')
-    .put(protect, isWaiterAtRestaurant, occupyTable);
-
-router
-    .route('/:id/callback')
+    .route('/tables/:id/callback')
     .put(protect, isWaiterAtRestaurant, goToTable)
     .delete(protect, isWaiterAtRestaurant, declineCall)
 
 router
-    .route('/calls')
+    .route('/tables/calls')
     .get(protect, isWaiterAtRestaurant, getCalls);
 
 module.exports = router;
