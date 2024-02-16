@@ -65,11 +65,12 @@ const corsOptions = () => process.env.NODE_ENV === "production" ? {
     },
     credentials: true,
 } : {
-    origin: '*',
+    // allow all
+    origin: ['*'],
     credentials: true,
 }
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions()));
 
 // Body parser
 app.use(
