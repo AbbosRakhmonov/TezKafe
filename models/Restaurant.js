@@ -26,7 +26,7 @@ const RestaurantSchema = new mongoose.Schema({
 });
 
 RestaurantSchema.virtual('director', {
-    ref: 'Manager',
+    ref: 'Director',
     localField: '_id',
     foreignField: 'restaurant',
     justOne: true
