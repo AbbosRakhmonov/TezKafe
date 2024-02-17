@@ -55,7 +55,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
     // Validate email & password
     if (!login || !password) {
-        return next(new ErrorResponse('Please provide an email and password', 400));
+        return next(new ErrorResponse('Please provide an login and password', 400));
     }
 
     // Check for admin
