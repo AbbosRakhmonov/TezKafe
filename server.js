@@ -64,11 +64,7 @@ const corsOptions = () => process.env.NODE_ENV === "production" ? {
         }
     },
     credentials: true,
-} : {
-    // allow all
-    origin: ['*'],
-    credentials: true,
-}
+} : {}
 
 app.use(cors(corsOptions()));
 
