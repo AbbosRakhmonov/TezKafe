@@ -13,7 +13,7 @@ const {emitEventTo} = require('../listeners/socketManager');
 // @access    Public
 exports.getCategories = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.query;
-    const categories = await Category.findOne({
+    const categories = await Category.find({
         restaurant
     }).populate('products');
 
