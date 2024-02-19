@@ -322,6 +322,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
 exports.closeTable = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user
     const {id} = req.params;
+    console.log(id)
     const table = await Table.findOne({
         restaurant,
         _id: id

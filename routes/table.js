@@ -37,7 +37,7 @@ router.route('/code/:id')
 router.route('/call/:id')
     .post(callWaiter);
 
-router.route('/type')
+router.route('/create/type')
     .get(protect, getTypeOfTables)
     .post(protect, isDirectorAtRestaurant, createTypeOfTable);
 
