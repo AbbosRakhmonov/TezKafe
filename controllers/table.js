@@ -107,7 +107,8 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     }
 
     const tables = await Table.find(filter)
-        .populate('waiter archiveOrders activeOrders totalOrders activePrice activeItems totalPrice totalItems')
+        .populate('waiter archiveOrders activeOrders totalOrders')
+        .populate('activePrice activeItems totalPrice totalItems')
 
     res.status(200).json(tables);
 });
