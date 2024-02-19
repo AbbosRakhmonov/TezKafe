@@ -86,48 +86,5 @@ TableSchema.virtual('totalOrders', {
     justOne: false
 });
 
-// Create a virtual property `activePrice` that is the sum of all the prices of the active orders
-TableSchema.virtual('activePrice').get(function () {
-    let activePrice = 0;
-    if (this.activeOrders && this.activeOrders.length > 0) {
-        this.activeOrders.forEach(order => {
-            activePrice += order.totalPrice;
-        })
-    }
-    return activePrice;
-});
-
-// Create a virtual property `activeItems` that is the sum of all the items of the active orders
-TableSchema.virtual('activeItems').get(function () {
-    let activeItems = 0;
-    if (this.activeOrders && this.activeOrders.length > 0) {
-        this.activeOrders.forEach(order => {
-            activeItems += order.totalItems;
-        })
-    }
-    return activeItems;
-});
-
-// Create a virtual property `totalPrice` that is the sum of all the prices of the total orders
-TableSchema.virtual('totalPrice').get(function () {
-    let totalPrice = 0;
-    if (this.totalOrders && this.totalOrders.length > 0) {
-        this.totalOrders.forEach(order => {
-            totalPrice += order.totalPrice;
-        })
-    }
-    return totalPrice;
-});
-
-// Create a virtual property `totalItems` that is the sum of all the items of the total orders
-TableSchema.virtual('totalItems').get(function () {
-    let totalItems = 0;
-    if (this.totalOrders && this.totalOrders.length > 0) {
-        this.totalOrders.forEach(order => {
-            totalItems += order.totalItems;
-        })
-    }
-    return totalItems;
-});
 
 module.exports = mongoose.model('Table', TableSchema);

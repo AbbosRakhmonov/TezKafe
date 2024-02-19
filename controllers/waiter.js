@@ -6,6 +6,7 @@ const ArchiveOrder = require('../models/ArchiveOrder');
 const Table = require('../models/Table');
 const Director = require('../models/Director');
 const {emitEventTo} = require('../listeners/socketManager');
+const mongoose = require("mongoose");
 
 // @desc      Get all waiters
 // @route     GET /api/v1/waiters
@@ -109,14 +110,55 @@ exports.getWaiterTables = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide a type of table', 400));
     }
 
-    let filter = {
-        restaurant,
-        typeOfTable: type,
-        waiter: id
-    }
+    let matchStage = {
+        $match: {
+            restaurant: new mongoose.Types.ObjectId(restaurant), // Ensure restaurant field is an ObjectId
+            waiter: new mongoose.Types.ObjectId(id), // Ensure waiter field is an ObjectId
+            typeOfTable: new mongoose.Types.ObjectId(type) // Ensure typeOfTable field is an ObjectId
+        }
+    };
 
-    const tables = await Table.find(filter)
-        .select('name createdAt totalPrice totalItems')
+    const tables = await Table.aggregate([
+        matchStage,
+        {
+            $lookup: {
+                from: 'activeorders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'activeOrders'
+            }
+        },
+        {
+            $lookup: {
+                from: 'archiveorders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'archiveOrders'
+            }
+        },
+        {
+            $lookup: {
+                from: 'orders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'totalOrders'
+            }
+        },
+        {
+            $project: {
+                name: 1,
+                createdAt: 1,
+                totalPrice: {
+                    $sum: '$totalOrders.totalPrice'
+                },
+                totalItems: {
+                    $sum: '$totalOrders.totalItems'
+                }
+            }
+        }
+    ]);
+
+
 
     res.status(200).json(tables);
 });
@@ -158,35 +200,43 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide a table', 400));
     }
 
-    const table = await Table.findOne({
-        restaurant,
-        _id: req.body.table
-    }).populate('waiter archiveOrders activeOrders totalOrders activePrice activeItems totalPrice totalItems')
+    let table = await Table.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.body.table),
+                restaurant: new mongoose.Types.ObjectId(restaurant)
+            }
+        },
+        {$addFields: {waiter: "$waiter", call: "$call", callId: "$callId"}}
+    ]);
 
-
-    if (!table) {
-        return next(new ErrorResponse('Table not found', 404));
+    if (!table || table.length === 0) {
+        return next(new ErrorResponse('Table not found with id of ' + req.body.table, 404));
     }
+
+    table = table[0]; // As aggregate returns an array, we need to get the first element
 
     if (table.waiter) {
         return next(new ErrorResponse('Table is already occupied', 400));
     }
 
     if (table.call === 'accepted' && table.callId !== id) {
-        return next(new ErrorResponse('Call is already accepted', 400));
+        return next(new ErrorResponse('Table is already accepted by another waiter', 400));
     }
 
     table.waiter = id;
     table.call = 'none'
     table.callId = null
 
-    await table.save();
+    await Table.findByIdAndUpdate(table._id, table);
 
     emitEventTo(`table-${table._id}`, 'tableOccupied', {
-        _id: table._id,
+        id: table._id,
+        waiter: id
     });
     emitEventTo(`waiters-${restaurant}`, 'tableOccupied', {
-        _id: table._id,
+        id: table._id,
+        waiter: id
     });
 
     res.status(200).json(table);
@@ -198,7 +248,7 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
 exports.goToTable = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
 
-    const table = await Table.findOne({
+    let table = await Table.findOne({
         restaurant,
         _id: req.params.id,
         waiter: id
@@ -217,6 +267,63 @@ exports.goToTable = asyncHandler(async (req, res, next) => {
     table.callTime = new Date()
 
     await table.save();
+
+    table = await Table.aggregate(
+        [
+            {
+                $match: {
+                    _id: table._id
+                }
+            },
+            {
+                $lookup: {
+                    from: 'activeorders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'activeOrders'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'archiveorders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'archiveOrders'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'orders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'totalOrders'
+                }
+            },
+            {
+                $project: {
+                    typeOfTable: 1,
+                    name: 1,
+                    waiter: 1,
+                    archiveOrders: 1,
+                    activeOrders: 1,
+                    totalOrders: 1,
+                    activePrice: {
+                        $sum: '$activeOrders.totalPrice'
+                    },
+                    activeItems: {
+                        $sum: '$activeOrders.totalItems'
+                    },
+                    totalPrice: {
+                        $sum: 'orders.totalPrice'
+                    },
+                    totalItems: {
+                        $sum: 'orders.totalItems'
+                    }
+                }
+            }
+        ]
+    )
+    table = table[0]
 
     emitEventTo(`table-${table._id}`, 'callAccepted', {
         _id: table._id,
@@ -251,7 +358,7 @@ exports.getCalls = asyncHandler(async (req, res, next) => {
 exports.declineCall = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
 
-    const table = await Table.findOne({
+    let table = await Table.findOne({
         restaurant,
         _id: req.params.id,
         callId: id
@@ -267,6 +374,68 @@ exports.declineCall = asyncHandler(async (req, res, next) => {
     table.callTime = null
 
     await table.save();
+
+    table = await Table.aggregate(
+        [
+            {
+                $match: {
+                    _id: table._id
+                }
+            },
+            {
+                $lookup: {
+                    from: 'activeorders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'activeOrders'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'archiveorders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'archiveOrders'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'orders',
+                    localField: '_id',
+                    foreignField: 'table',
+                    as: 'totalOrders'
+                }
+            },
+            {
+                $project: {
+                    typeOfTable: 1,
+                    name: 1,
+                    waiter: 1,
+                    archiveOrders: 1,
+                    activeOrders: 1,
+                    totalOrders: 1,
+                    activePrice: {
+                        $sum: '$activeOrders.totalPrice'
+                    },
+                    activeItems: {
+                        $sum: '$activeOrders.totalItems'
+                    },
+                    totalPrice: {
+                        $sum: 'orders.totalPrice'
+                    },
+                    totalItems: {
+                        $sum: 'orders.totalItems'
+                    }
+                }
+            }
+        ]
+    )
+
+    table = table[0]
+
+    emitEventTo(`table-${table._id}`, 'callDeclined', {
+        _id: table._id,
+    });
 
     res.status(200).json(table);
 });
