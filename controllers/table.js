@@ -107,8 +107,11 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     }
 
     const tables = await Table.find(filter)
+        .select('waiter archiveOrders activeOrders totalOrders activePrice activeItems totalPrice totalItems') // select only the fields you need
         .populate('waiter archiveOrders activeOrders totalOrders')
         .populate('activePrice activeItems totalPrice totalItems')
+        .lean() // convert result to a plain JavaScript object
+        .exec(); // execute the query
 
     res.status(200).json(tables);
 });
