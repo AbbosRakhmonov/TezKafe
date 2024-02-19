@@ -193,7 +193,7 @@ exports.deleteTable = asyncHandler(async (req, res, next) => {
     await ActiveOrder.deleteMany({table: table._id});
     await ArchiveOrder.deleteMany({table: table._id});
     await Basket.deleteOne({table: table._id});
-    let imagePath = path.join(__dirname, `../public/${table.qrCode}`);
+    let imagePath = path.join(__dirname, `../uploads/${table.qrCode}`);
     await Table.deleteOne({_id: table._id});
     // delete image
     try {
