@@ -24,9 +24,7 @@ exports.createTable = asyncHandler(async (req, res, next) => {
         setWaiterByAdmin: !!waiter,
         restaurant
     });
-
-    // generate qr code for table and save it to public folder
-    let hostname = req.headers.host;
+    let hostname = process.env.HOSTNAME
     const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
     let imagePath = path.join(__dirname, `../uploads/${table._id}.png`);
     try {
