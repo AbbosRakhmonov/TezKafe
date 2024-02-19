@@ -37,13 +37,7 @@ router.route('/code/:id')
 router.route('/call/:id')
     .post(callWaiter);
 
-router.route('/create/type')
-    .get(protect, getTypeOfTables)
-    .post(protect, isDirectorAtRestaurant, createTypeOfTable);
 
-router.route('/type/:id')
-    .put(protect, isDirectorAtRestaurant, updateTypeOfTable)
-    .delete(protect, isDirectorAtRestaurant, deleteTypeOfTable);
 
 module.exports = router;
 
