@@ -11,10 +11,6 @@ const RestaurantSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add an address']
     },
-    location: {
-        type: String,
-        required: [true, 'Please add a location']
-    },
     photo: {
         type: String,
         default: 'no-photo.jpg'
