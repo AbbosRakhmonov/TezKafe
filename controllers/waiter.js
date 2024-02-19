@@ -46,7 +46,8 @@ exports.createWaiter = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('The phone number is already in use', 400))
     }
     req.body.restaurant = req.user.restaurant
-    const waiter = await Waiter.create(req.body);
+    await Waiter.create(req.body)
+    const waiter = await Waiter.findOne({phone});
 
     res.status(201).json(waiter);
 });
