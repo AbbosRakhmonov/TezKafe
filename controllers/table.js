@@ -9,6 +9,7 @@ const {emitEventTo} = require('../listeners/socketManager');
 const qr = require('qr-image');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require("mongoose");
 
 // @desc      Create table
 // @route     POST /api/v1/tables
@@ -16,40 +17,44 @@ const path = require('path');
 exports.createTable = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user;
     const {typeOfTable, name, waiter} = req.body
-
-    const table = await Table.create({
-        typeOfTable,
-        name,
-        waiter,
-        setWaiterByAdmin: !!waiter,
-        restaurant
-    });
-    let hostname = process.env.HOSTNAME
-    const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
-    let imagePath = path.join(__dirname, `../uploads/${table._id}.png`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        fs.writeFileSync(imagePath, qr_svg);
-    } catch (err) {
-        return next(new ErrorResponse(err, 500));
-    }
+        const table = await Table.create([{
+            typeOfTable,
+            name,
+            waiter,
+            setWaiterByAdmin: !!waiter,
+            restaurant
+        }], {session});
+        let hostname = process.env.HOSTNAME
+        const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
+        let imagePath = path.join(__dirname, `../uploads/${table._id}.png`);
+        await fs.writeFileSync(imagePath, qr_svg);
 
-    table.qrCode = `${table._id}.png`;
-    await table.save();
+        table.qrCode = `${table._id}.png`;
+        await table.save();
 
-    await Basket.create({
-        restaurant,
-        table: table._id,
-        products: [],
-        totalPrice: 0
-    });
+        await Basket.create([{
+            restaurant,
+            table: table._id,
+            products: [],
+            totalPrice: 0
+        }], {session});
 
-    if (waiter) {
-        emitEventTo(waiter, 'newTable', table);
-    } else {
-        emitEventTo(`
+        if (waiter) {
+            emitEventTo(waiter, 'newTable', table);
+        } else {
+            emitEventTo(`
     waiters -${restaurant}`, 'newTable', table);
+        }
+        res.status(201).json(table);
+    } catch (error) {
+        await session.abortTransaction();
+        return next(new ErrorResponse(error, 500));
+    } finally {
+        await session.endSession();
     }
-    res.status(201).json(table);
 });
 
 // @desc      Get table
