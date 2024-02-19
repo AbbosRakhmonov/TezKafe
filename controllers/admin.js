@@ -187,6 +187,17 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
                 runValidators: true,
                 session
             });
+            if (director.avatar && director.avatar !== directorDoc.photo) {
+                await File.findOneAndUpdate({name: director.avatar}, {inuse: true});
+                const oldFile = await File.findOne({name: directorDoc.photo});
+                if (oldFile) {
+                    oldFile.inuse = false;
+                    await oldFile.save();
+                }
+            } else if (director?.avatar === null) {
+                director.avatar = 'no-photo.jpg'
+                await restaurant.save()
+            }
         }
         restaurant = await Restaurant.findByIdAndUpdate(req.params.id, rest, {
             new: true,
@@ -201,7 +212,7 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
                 oldFile.inuse = false;
                 await oldFile.save();
             }
-        } else if (req.body.avatar === null) {
+        } else if (req.body.photo === null) {
             restaurant.photo = 'no-photo.jpg'
             await restaurant.save()
         }
