@@ -20,15 +20,15 @@ exports.createTable = asyncHandler(async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const table = await Table.create({
+        let table = await Table.create([{
             typeOfTable,
             name,
             waiter,
             setWaiterByAdmin: !!waiter,
             restaurant
-        }, {session})
+        }], {session})
 
-        console.log(table)
+        table = table[0];
 
         let hostname = process.env.HOSTNAME
         const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
@@ -38,12 +38,14 @@ exports.createTable = asyncHandler(async (req, res, next) => {
         table.qrCode = `${table._id}.png`;
         await table.save();
 
-        await Basket.create({
+        await Basket.create([{
             restaurant,
             table: table._id,
             products: [],
             totalPrice: 0
-        });
+        }], {session});
+
+        await session.commitTransaction();
 
         if (waiter) {
             emitEventTo(waiter, 'newTable', table);
