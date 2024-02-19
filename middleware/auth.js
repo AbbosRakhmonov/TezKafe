@@ -18,7 +18,7 @@ const validateToken = async (token) => {
 
 // Protect routes
 exports.protect = asyncHandler(async (req, res, next) => {
-    const token = req.cookies.tezkafe_token || req.headers.authorization.split(' ')[1];
+    const token = req.cookies.tezkafe_token || req.headers.authorization?.split(' ')[1];
     try {
         req.user = await validateToken(token)
         next();
