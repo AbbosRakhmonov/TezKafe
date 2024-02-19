@@ -16,6 +16,7 @@ const DirectorSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Phone is required'],
         trim: true,
+        unique: true
     },
     password: {
         type: String,

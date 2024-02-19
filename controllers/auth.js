@@ -81,6 +81,10 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
     const {id, role} = req.user
     let user;
 
+    if (req.body.password) {
+        delete req.body.password
+    }
+
     if (role === 'director') {
         user = await Director.findByIdAndUpdate(id, req.body, {
             new: true,
@@ -130,8 +134,7 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Password is incorrect', 400));
     }
 
-    // const salt = await bcrypt.genSalt(10);
-    // user.password = await bcrypt.hash(req.body.newPassword, salt);
+    user.password = req.body.newPassword
 
     await user.save();
 

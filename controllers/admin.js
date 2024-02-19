@@ -13,6 +13,7 @@ const Product = require('../models/Product');
 const File = require('../models/File');
 
 const mongoose = require('mongoose');
+const bcrypt = require("bcryptjs");
 
 const sendWithCookie = (res, token) => {
     res
@@ -179,7 +180,11 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
             if (!directorDoc) {
                 return next(new ErrorResponse(`Director not found`, 404));
             }
-            await Director.findByIdAndUpdate(director._id, {
+            if (director.password) {
+                const salt = await bcrypt.genSalt(10);
+                director.password = await bcrypt.hash(director.password, salt);
+            }
+            const newGenDirector = await Director.findByIdAndUpdate(director._id, {
                 ...director,
                 restaurant: restaurant._id
             }, {
@@ -187,16 +192,16 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
                 runValidators: true,
                 session
             });
-            if (director.avatar && director.avatar !== directorDoc.photo) {
+            if (director.avatar && director.avatar !== directorDoc.avatar) {
                 await File.findOneAndUpdate({name: director.avatar}, {inuse: true});
-                const oldFile = await File.findOne({name: directorDoc.photo});
+                const oldFile = await File.findOne({name: directorDoc.avatar});
                 if (oldFile) {
                     oldFile.inuse = false;
                     await oldFile.save();
                 }
-            } else if (director?.avatar === null) {
-                director.avatar = 'no-photo.jpg'
-                await restaurant.save()
+            } else if (director.avatar === null) {
+                newGenDirector.avatar = 'no-photo.jpg'
+                await newGenDirector.save()
             }
         }
         restaurant = await Restaurant.findByIdAndUpdate(req.params.id, rest, {
