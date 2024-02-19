@@ -116,6 +116,10 @@ exports.registerRestaurant = asyncHandler(async (req, res, next) => {
         if (!director) {
             return next(new ErrorResponse('Please provide director', 400))
         }
+        const waiter = await Waiter.findOne({phone: director.phone});
+        if (waiter) {
+            return next(new ErrorResponse('The phone number is already in use', 400))
+        }
         const restaurant = await Restaurant.create([{photo, name, address, location}], {session});
         director.restaurant = restaurant[0]._id;
         await Director.create([{...director}], {session});

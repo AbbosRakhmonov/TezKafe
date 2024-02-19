@@ -4,6 +4,7 @@ const Waiter = require('../models/Waiter');
 const Order = require('../models/Order');
 const ArchiveOrder = require('../models/ArchiveOrder');
 const Table = require('../models/Table');
+const Director = require('../models/Director');
 const {emitEventTo} = require('../listeners/socketManager');
 
 // @desc      Get all waiters
@@ -36,6 +37,14 @@ exports.getWaiter = asyncHandler(async (req, res, next) => {
 // @route     POST /api/v1/waiters
 // @access    Private
 exports.createWaiter = asyncHandler(async (req, res, next) => {
+    const {phone} = req.body;
+    if (!phone) {
+        return next(new ErrorResponse('Please provide phone', 400))
+    }
+    const directorWithPhone = await Director.findOne({phone});
+    if (directorWithPhone) {
+        return next(new ErrorResponse('The phone number is already in use', 400))
+    }
     req.body.restaurant = req.user.restaurant
     const waiter = await Waiter.create(req.body);
 
