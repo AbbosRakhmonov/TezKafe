@@ -1,12 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const {
-    createTypeOfTable,
-    deleteTypeOfTable,
-    getTypeOfTables,
-    updateTypeOfTable
-} = require('../controllers/typeOfTable');
-const {
     createTable,
     deleteTable,
     getTables,
@@ -36,7 +30,6 @@ router.route('/code/:id')
 
 router.route('/call/:id')
     .post(callWaiter);
-
 
 
 module.exports = router;
