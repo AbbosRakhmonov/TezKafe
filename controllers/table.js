@@ -42,6 +42,7 @@ exports.createTable = asyncHandler(async (req, res, next) => {
         restaurant,
         table: table._id,
         products: [],
+        totalPrice: 0
     });
 
     if (waiter) {
