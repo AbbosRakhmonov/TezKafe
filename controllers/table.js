@@ -20,13 +20,13 @@ exports.createTable = asyncHandler(async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const table = await Table.create([{
+        const table = await Table.create({
             typeOfTable,
             name,
             waiter,
             setWaiterByAdmin: !!waiter,
             restaurant
-        }], {session})
+        }, {session})
 
         console.log(table)
 
