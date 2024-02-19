@@ -26,21 +26,24 @@ exports.createTable = asyncHandler(async (req, res, next) => {
             waiter,
             setWaiterByAdmin: !!waiter,
             restaurant
-        }], {session})[0]
+        }], {session})
+
+        console.log(table)
+
         let hostname = process.env.HOSTNAME
         const qr_svg = qr.imageSync(`${hostname}/connect/${table._id}`, {type: 'png'});
         let imagePath = path.join(__dirname, `../uploads/${table._id}.png`);
-        await fs.writeFileSync(imagePath, qr_svg);
+        fs.writeFileSync(imagePath, qr_svg);
 
         table.qrCode = `${table._id}.png`;
         await table.save();
 
-        await Basket.create([{
+        await Basket.create({
             restaurant,
             table: table._id,
             products: [],
             totalPrice: 0
-        }], {session});
+        });
 
         if (waiter) {
             emitEventTo(waiter, 'newTable', table);
