@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Table = require('../models/Table');
 const ActiveOrder = require('../models/ActiveOrder');
 const {emitEventTo} = require('../listeners/socketManager');
+const mongoose = require('mongoose');
 
 // @desc      Get all orders
 // @route     GET /api/v1/orders?table=tableId
@@ -45,9 +46,9 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     }
 
     const existTable = await Table.findOne({
-        _id: table,
-        restaurant,
-        waiter: id
+        _id: new mongoose.Types.ObjectId(table),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+        waiter: new mongoose.Types.ObjectId(id)
     })
 
     if (!existTable) {
@@ -55,16 +56,16 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     }
 
     let activeOrder = await ActiveOrder.findOne({
-        table,
-        restaurant,
-        waiter: id
+        table: new mongoose.Types.ObjectId(table),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+        waiter: new mongoose.Types.ObjectId(id)
     });
 
     if (!activeOrder) {
         activeOrder = await ActiveOrder.create({
-            table,
-            restaurant,
-            waiter: id
+            table: new mongoose.Types.ObjectId(table),
+            restaurant: new mongoose.Types.ObjectId(restaurant),
+            waiter: new mongoose.Types.ObjectId(id),
         });
     }
 
