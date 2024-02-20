@@ -11,13 +11,17 @@ const {emitEventTo} = require('../listeners/socketManager');
 // @access    Public
 exports.getProducts = asyncHandler(async (req, res, next) => {
     const {restaurant, category, available} = req.query
+
     let filter = {
         restaurant,
-        category
     }
 
     if (available) {
         filter.available = JSON.parse(available)
+    }
+
+    if (category) {
+        filter.category = category
     }
 
     const products = await Product.find(filter);
