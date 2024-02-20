@@ -275,7 +275,7 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user;
     const table = await Table.findOne({
         restaurant,
-        _id: req.params.id
+        _id: new mongoose.Types.ObjectId(req.params.id)
     })
     if (!table) {
         return next(new ErrorResponse(`
@@ -299,8 +299,8 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
     const {typeOfTable, name, waiter} = req.body
 
     let updatedTable = await Table.findByIdAndUpdate(req.params.id, {
-        typeOfTable,
-        name,
+        typeOfTable: typeOfTable || table.typeOfTable,
+        name: name || table.name,
         waiter,
         setWaiterByAdmin: !!waiter,
         call: 'none',
@@ -309,13 +309,6 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
         new: true,
         runValidators: true
     })
-
-    if (!updatedTable) {
-        return next(new ErrorResponse(`
-    Error
-    updating
-    table`, 500));
-    }
 
     updatedTable = await Table.aggregate(
         [
