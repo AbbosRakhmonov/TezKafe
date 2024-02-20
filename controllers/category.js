@@ -14,7 +14,7 @@ const {emitEventTo} = require('../listeners/socketManager');
 exports.getCategories = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.query;
     const categories = await Category.find({
-        restaurant
+        restaurant: new mongoose.Types.ObjectId(restaurant)
     }).populate('products');
 
     res.status(200).json(categories);
