@@ -66,6 +66,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
             table: new mongoose.Types.ObjectId(table),
             restaurant: new mongoose.Types.ObjectId(restaurant),
             waiter: new mongoose.Types.ObjectId(id),
+            totalPrice: 0
         });
     }
 
