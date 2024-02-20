@@ -65,7 +65,7 @@ exports.updateWaiter = asyncHandler(async (req, res, next) => {
         );
     }
 
-    await waiter.updateOne(req.body, {
+    waiter = await waiter.updateOne(req.body, {
         new: true,
         runValidators: true
     });
@@ -157,7 +157,6 @@ exports.getWaiterTables = asyncHandler(async (req, res, next) => {
             }
         }
     ]);
-
 
 
     res.status(200).json(tables);
