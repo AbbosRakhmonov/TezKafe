@@ -72,7 +72,8 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
 
     activeOrder.products.push({
         product,
-        quantity
+        quantity,
+        price: 0
     })
     await activeOrder.save();
 
