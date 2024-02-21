@@ -224,6 +224,54 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 foreignField: 'table',
                 as: 'activeOrders'
             }
+            //     "products": [
+            //                     {
+            //                         "product": "65d4e24e7025d7f2dc04ae54",
+            //                         "quantity": 3,
+            //                         "price": 21000,
+            //                         "_id": "65d51a9b7b5a9df375826f7c"
+            //                     }
+            //                 ],
+        },
+        {
+            $unwind: "$activeOrders" // Unwind the activeOrders array to perform lookup on each element
+        },
+        {
+            $lookup: {
+                from: 'products',
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $addFields: {
+                'activeOrders.products': {
+                    $map: {
+                        input: "$activeOrders.products",
+                        as: "product",
+                        in: {
+                            product: "$$product._id",
+                            quantity: "$activeOrders.products.quantity",
+                            price: "$activeOrders.products.price",
+                            _id: "$activeOrders.products._id"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $group: {
+                _id: '$_id', // Group by _id to reconstruct the array
+                typeOfTable: {$first: '$typeOfTable'},
+                name: {$first: '$name'},
+                waiter: {$first: '$waiter'},
+                archiveOrders: {$first: '$archiveOrders'},
+                totalOrders: {$first: '$totalOrders'},
+                activeOrders: {$push: '$activeOrders'}, // Push the modified activeOrders back into an array
+                activePrice: {$sum: '$activeOrders.totalPrice'}, // Recalculate activePrice and activeItems
+                activeItems: {$sum: '$activeOrders.quantity'} // Calculate sum of quantity
+            }
         },
         {
             $lookup: {
