@@ -61,6 +61,8 @@ ActiveOrderSchema.pre('save', async function (next) {
         }
     })
 
+    this.products = newProducts;
+
     await Promise.all(newProducts.map(async product => {
         const existProduct = await Product.findOne({
             _id: product.product,

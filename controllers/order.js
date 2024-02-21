@@ -77,6 +77,14 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     })
     await activeOrder.save();
 
+    activeOrder = await ActiveOrder.findOne({
+        table: new mongoose.Types.ObjectId(table),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+        waiter: new mongoose.Types.ObjectId(id)
+    }).populate({
+        path: 'products.product',
+    })
+
     if (!existTable.hasActiveOrder) {
         emitEventTo(id, 'newActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'newActiveOrder', activeOrder);
