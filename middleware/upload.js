@@ -40,18 +40,16 @@ const mergeChunks = async (fileName, totalChunks) => {
 
 
     // get the file
-    let filePath = path.join(__dirname, "..", "uploads", fileName);
+    let filePath = '/../uploads/' + fileName
 
     try {
-        const file = fs.readFileSync(filePath);
-        console.log(file)
         let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
 
-        await sharp(file)
+        await sharp(filePath)
             .webp({lossless: true})
             .toFile(path.join(__dirname, "..", "uploads", newFileName));
 
-        await fs.promises.unlink(file);
+        await fs.promises.unlink(filePath);
 
         return newFileName;
     } catch (e) {
