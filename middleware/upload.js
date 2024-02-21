@@ -38,23 +38,25 @@ const mergeChunks = async (fileName, totalChunks) => {
 
     writeStream.end();
 
+    return fileName;
+
 
     // get the file
-    let filePath = path.join(__dirname, "..", "uploads", fileName);
+    // let filePath = path.join(__dirname, "..", "uploads", fileName);
 
-    try {
-        let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
-
-        await sharp(filePath)
-            .webp({lossless: true})
-            .toFile(path.join(__dirname, "..", "uploads", newFileName));
-
-        await fs.promises.unlink(filePath);
-
-        return newFileName;
-    } catch (e) {
-        throw new Error(e);
-    }
+    // try {
+    //     let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
+    //
+    //     await sharp(filePath)
+    //         .webp({lossless: true})
+    //         .toFile(path.join(__dirname, "..", "uploads", newFileName));
+    //
+    //     await fs.promises.unlink(filePath);
+    //
+    //     return newFileName;
+    // } catch (e) {
+    //     throw new Error(e);
+    // }
 };
 
 module.exports = {
