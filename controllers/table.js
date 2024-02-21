@@ -227,6 +227,14 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         },
         {
             $lookup: {
+                from: 'products', // Assuming 'products' is the name of your products collection
+                localField: 'activeOrders.products.product', // Assuming 'product' is the field containing the product ID
+                foreignField: '_id',
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $lookup: {
                 from: 'orders',
                 localField: '_id',
                 foreignField: 'table',
