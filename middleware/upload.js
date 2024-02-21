@@ -21,30 +21,17 @@ const mergeChunks = async (fileName, totalChunks) => {
         await fs.promises.mkdir(mergedFilePath);
     }
 
-    const writeStream = fs.createWriteStream(`${mergedFilePath}/${fileName}`);
+    const writeStream = fs.createWriteStream(path.join(mergedFilePath, fileName));
 
 
     for (let i = 0; i < totalChunks; i++) {
-        const chunkFilePath = `${chunkDir}/${fileName}.part_${i}`;
-        try {
-            const chunkBuffer = await fs.promises.readFile(chunkFilePath);
-            writeStream.write(chunkBuffer);
-            await fs.promises.unlink(chunkFilePath); // Delete the individual chunk file after merging
-        } catch (error) {
-            console.error(`Error processing chunk ${i}:`, error);
-            throw error;
-        }
+        const chunkFilePath = path.join(chunkDir, `${fileName}.part_${i}`);
+        const chunkBuffer = await fs.promises.readFile(chunkFilePath);
+        writeStream.write(chunkBuffer);
+        await fs.promises.unlink(chunkFilePath); // Delete the individual chunk file after merging
     }
 
     writeStream.end();
-
-    // // change fileName to fileName-<timestamp>.<ext>
-    // const fileExt = path.extname(fileName);
-    // const fileNameWithoutExt = path.basename(fileName, fileExt);
-    // const newFileName = `${fileNameWithoutExt}-${Date.now()}${fileExt}`;
-    //
-    // // save the file with the new name
-    // await fs.promises.rename(`${mergedFilePath}/${fileName}`, `${mergedFilePath}/${newFileName}`);
 
     return fileName;
 };
