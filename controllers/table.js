@@ -234,6 +234,9 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: '$activeOrders'
+        },
+        {
             $project: {
                 typeOfTable: 1,
                 name: 1,
@@ -247,10 +250,10 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                     $sum: '$activeOrders.totalItems'
                 },
                 totalPrice: {
-                    $sum: 'orders.totalPrice'
+                    $sum: 'totalOrders.totalPrice'
                 },
                 totalItems: {
-                    $sum: 'orders.totalItems'
+                    $sum: 'totalOrders.totalItems'
                 }
             }
         }
