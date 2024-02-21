@@ -40,7 +40,7 @@ const mergeChunks = async (fileName, totalChunks) => {
 
 
     // get the file
-    let filePath = '/../uploads/' + fileName
+    let filePath = path.join(__dirname, "..", "uploads", fileName);
 
     try {
         let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
