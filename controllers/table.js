@@ -226,40 +226,17 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: "$activeOrders" // Unwind the activeOrders array to perform lookup on each element
+            $unwind: {
+                path: '$activeOrders',
+                preserveNullAndEmptyArrays: true
+            }
         },
         {
             $lookup: {
                 from: 'products',
-                let: {products: '$activeOrders.products.product'},
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {$in: ['$_id', '$$products']}
-                        }
-                    },
-                    {
-                        $project: {
-                            _id: 1,
-                            name: 1
-                        }
-                    }
-                ],
-                as: 'activeOrders.products'
-            }
-        },
-        {
-            $group: {
-                _id: '$_id', // Group by _id to reconstruct the array
-                typeOfTable: {$first: '$typeOfTable'},
-                name: {$first: '$name'},
-                waiter: {$first: '$waiter'},
-                archiveOrders: {$first: '$archiveOrders'},
-                totalOrders: {$first: '$totalOrders'},
-                activeOrders: {$push: '$activeOrders'}, // Push the modified activeOrders back into an array
-                activePrice: {$sum: '$activeOrders.totalPrice'}, // Recalculate activePrice and activeItems
-                activeItems: {$sum: '$activeOrders.quantity'}, // Calculate sum of quantity
-                totalPrice: {$sum: '$activeOrders.totalPrice'} // Calculate sum of totalPrice
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
+                as: 'activeOrders.products.product'
             }
         },
         {
