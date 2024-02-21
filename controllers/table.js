@@ -222,6 +222,29 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'activeorders',
                 localField: '_id',
                 foreignField: 'table',
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: 'products',
+                            localField: 'products.product',
+                            foreignField: '_id',
+                            as: 'product'
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: "$product",
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: "$_id",
+                            totalPrice: {$sum: "$product.price"},
+                            totalItems: {$sum: "$quantity"}
+                        }
+                    }
+                ],
                 as: 'activeOrders'
             }
         },
