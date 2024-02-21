@@ -29,7 +29,7 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
     if (chunkNumber === totalChunks - 1) {
         // Merge all chunks
         const mergedFileName = await mergeChunks(fileName, totalChunks);
-
+        await File.create({name: mergedFileName});
         // Send response back to client
         res.status(200).json(mergedFileName);
     } else {

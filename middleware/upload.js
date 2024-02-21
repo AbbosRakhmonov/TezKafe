@@ -26,7 +26,7 @@ const mergeChunks = async (fileName, totalChunks) => {
 
             // Create a read stream for the chunk file and pipe it to the write stream
             const readStream = fs.createReadStream(chunkFilePath);
-            readStream.pipe(writeStream, {end: false});
+            readStream.pipe(writeStream, { end: false });
 
             // Wait for the chunk to be fully written before continuing to the next chunk
             await new Promise((resolve, reject) => {
@@ -37,6 +37,12 @@ const mergeChunks = async (fileName, totalChunks) => {
             // Delete the chunk file
             await fs.promises.unlink(chunkFilePath);
         }
+
+        // Wait for all data to be written to the final file
+        await new Promise((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+        });
     } catch (error) {
         // If there's an error, delete the final file and rethrow the error
         writeStream.close();
