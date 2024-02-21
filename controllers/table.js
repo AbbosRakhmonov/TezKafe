@@ -224,12 +224,8 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 foreignField: 'table',
                 as: 'activeOrders'
             }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders',
-                preserveNullAndEmptyArrays: true // Preserve documents that don't have activeOrders
-            }
+        }, {
+            $unwind: '$activeOrders'
         },
         {
             $lookup: {
@@ -245,10 +241,14 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: {$first: '$typeOfTable'},
                 name: {$first: '$name'},
                 waiter: {$first: '$waiter'},
-                activeOrders: {$push: '$activeOrders'}, // Group back to array
-                totalOrders: {$first: '$totalOrders'}
+                activeOrders: {$push: '$activeOrders'},
+                totalOrders: {$first: '$totalOrders'},
+                activePrice: {$sum: '$activeOrders.totalPrice'},
+                activeItems: {$sum: '$activeOrders.totalItems'},
+                totalPrice: {$sum: '$totalOrders.totalPrice'},
+                totalItems: {$sum: '$totalOrders.totalItems'}
             }
-        },
+        }
         {
             $lookup: {
                 from: 'orders',
@@ -262,34 +262,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: 1,
                 name: 1,
                 waiter: 1,
-                activeOrders: {
-                    $map: {
-                        input: '$activeOrders',
-                        as: 'order',
-                        in: {
-                            _id: '$$order._id',
-                            table: '$$order.table',
-                            waiter: '$$order.waiter',
-                            totalPrice: '$$order.totalPrice',
-                            restaurant: '$$order.restaurant',
-                            createdAt: '$$order.createdAt',
-                            updatedAt: '$$order.updatedAt',
-                            __v: '$$order.__v',
-                            products: {
-                                $map: {
-                                    input: '$$order.products',
-                                    as: 'product',
-                                    in: {
-                                        _id: '$$product._id',
-                                        product: '$$product.product',
-                                        quantity: '$$product.quantity',
-                                        price: '$$product.price'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
+                activeOrders: 1,
                 totalOrders: 1,
                 activePrice: {
                     $sum: '$activeOrders.totalPrice'
