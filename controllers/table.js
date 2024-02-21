@@ -246,7 +246,34 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: 1,
                 name: 1,
                 waiter: 1,
-                activeOrders: 1,
+                activeOrders: {
+                    $map: {
+                        input: '$activeOrders',
+                        as: 'order',
+                        in: {
+                            _id: '$$order._id',
+                            table: '$$order.table',
+                            waiter: '$$order.waiter',
+                            totalPrice: '$$order.totalPrice',
+                            restaurant: '$$order.restaurant',
+                            createdAt: '$$order.createdAt',
+                            updatedAt: '$$order.updatedAt',
+                            __v: '$$order.__v',
+                            products: {
+                                $map: {
+                                    input: '$$order.products',
+                                    as: 'product',
+                                    in: {
+                                        _id: '$$product._id',
+                                        product: '$$product.product',
+                                        quantity: '$$product.quantity',
+                                        price: '$$product.price'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 totalOrders: 1,
                 activePrice: {
                     $sum: '$activeOrders.totalPrice'
