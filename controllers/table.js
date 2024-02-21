@@ -234,14 +234,17 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             //                 ],
         },
         {
-            $unwind: "$activeOrders" // Unwind the activeOrders array to perform lookup on each element
+            $unwind: {
+                path: "$activeOrders",
+                preserveNullAndEmptyArrays: true
+            }
         },
         {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products'
+                as: 'activeOrders.products.product'
             }
         },
         {
@@ -251,11 +254,18 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 name: {$first: "$name"},
                 waiter: {$first: "$waiter"},
                 activeOrders: {$push: "$activeOrders"},
+                totalOrders: {$first: "$totalOrders"},
                 activePrice: {
                     $sum: '$activeOrders.totalPrice'
                 },
                 activeItems: {
                     $sum: '$activeOrders.totalItems'
+                },
+                totalPrice: {
+                    $sum: 'orders.totalPrice'
+                },
+                totalItems: {
+                    $sum: 'orders.totalItems'
                 }
             }
         },
