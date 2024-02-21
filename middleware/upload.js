@@ -23,13 +23,18 @@ const mergeChunks = async (fileName, totalChunks) => {
     const writeStream = fs.createWriteStream(`${mergedFilePath}/${fileName}`);
     for (let i = 0; i < totalChunks; i++) {
         const chunkFilePath = `${chunkDir}/${fileName}.part_${i}`;
-        const chunkBuffer = await fs.promises.readFile(chunkFilePath);
+        const chunkBuffer = fs.readFileSync(chunkFilePath);
         writeStream.write(chunkBuffer);
         fs.unlinkSync(chunkFilePath); // Delete the individual chunk file after merging
     }
 
-    writeStream.end();
-    console.log("Chunks merged successfully");
+    writeStream.end(); // End the stream
+    writeStream.on('finish', () => {
+        console.log('File has been merged successfully');
+    });
+    writeStream.on('error', (err) => {
+        throw new Error('Error merging chunks');
+    });
 };
 
 module.exports = {

@@ -20,21 +20,13 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
         fs.mkdirSync(chunkDir);
     }
 
-    const chunkFilePath = `${chunkDir}/${fileName}.part_${chunkNumber}`;
+    const chunkFilePath = path.join(chunkDir, `${fileName}.part_${chunkNumber}`);
+    fs.writeFileSync(chunkFilePath, chunk);
 
-    try {
-        await fs.promises.writeFile(chunkFilePath, chunk);
-        console.log(`Chunk ${chunkNumber}/${totalChunks} saved`);
-
-        if (chunkNumber === totalChunks - 1) {
-            // If this is the last chunk, merge all chunks into a single file
-            await mergeChunks(fileName, totalChunks);
-            console.log("File merged successfully");
-        }
-
-        res.status(200).json({message: "Chunk uploaded successfully"});
-    } catch (error) {
-        console.error("Error saving chunk:", error);
-        res.status(500).json({error: "Error saving chunk"});
+    if (chunkNumber === totalChunks - 1) {
+        await mergeChunks(fileName, totalChunks);
+        return res.status(200).json("File uploaded successfully");
     }
+
+    res.status(200).json("Chunk uploaded successfully");
 });

@@ -237,6 +237,14 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             $unwind: "$activeOrders"
         },
         {
+            $lookup: {
+                from: 'products',
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
+                as: 'activeOrders.products'
+            }
+        },
+        {
             $unwind: "$totalOrders"
         },
         {
@@ -244,7 +252,26 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: 1,
                 name: 1,
                 waiter: 1,
-                activeOrders: 1,
+                activeOrder: {
+                    _id: "$activeOrders._id",
+                    table: "$activeOrders.table",
+                    waiter: "$activeOrders.waiter",
+                    restaurant: "$activeOrders.restaurant",
+                    createdAt: "$activeOrders.createdAt",
+                    updatedAt: "$activeOrders.updatedAt",
+                    products: {
+                        $map: {
+                            input: "$activeOrders.products",
+                            as: "product",
+                            in: {
+                                _id: "$$product._id",
+                                product: "$$product.product",
+                                quantity: "$$product.quantity",
+                                price: "$$product.price"
+                            }
+                        }
+                    }
+                },
                 totalOrders: 1,
                 activePrice: {
                     $sum: '$activeOrders.totalPrice'
