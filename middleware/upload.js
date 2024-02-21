@@ -44,6 +44,7 @@ const mergeChunks = async (fileName, totalChunks) => {
 
     try {
         const file = await fs.promises.readFile(filePath);
+        console.log(file)
         let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
 
         await sharp(file)
