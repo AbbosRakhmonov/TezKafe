@@ -224,50 +224,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 foreignField: 'table',
                 as: 'activeOrders'
             }
-            //     "products": [
-            //                     {
-            //                         "product": "65d4e24e7025d7f2dc04ae54",
-            //                         "quantity": 3,
-            //                         "price": 21000,
-            //                         "_id": "65d51a9b7b5a9df375826f7c"
-            //                     }
-            //                 ],
-        },
-        {
-            $unwind: {
-                path: "$activeOrders",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $lookup: {
-                from: 'products',
-                localField: 'activeOrders.products.product',
-                foreignField: '_id',
-                as: 'activeOrders.products.product'
-            }
-        },
-        {
-            $group: {
-                _id: "$_id",
-                typeOfTable: {$first: "$typeOfTable"},
-                name: {$first: "$name"},
-                waiter: {$first: "$waiter"},
-                activeOrders: {$push: "$activeOrders"},
-                totalOrders: {$first: "$totalOrders"},
-                activePrice: {
-                    $sum: '$activeOrders.totalPrice'
-                },
-                activeItems: {
-                    $sum: '$activeOrders.totalItems'
-                },
-                totalPrice: {
-                    $sum: 'orders.totalPrice'
-                },
-                totalItems: {
-                    $sum: 'orders.totalItems'
-                }
-            }
         },
         {
             $lookup: {

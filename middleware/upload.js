@@ -10,18 +10,11 @@ const upload = multer({
     limits: {
         fileSize: 50000000, // 50MB
     },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Please upload an image file'), false);
-        }
-    },
 })
 
 const getMetaData = async (file) => {
     try {
-        return await sharp("sammy.png").metadata();
+        return await sharp(file).metadata();
     } catch (error) {
         throw new Error(error);
     }
