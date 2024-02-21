@@ -56,9 +56,8 @@ BasketSchema.pre('save', async function (next) {
         } else {
             newProducts.push(product);
         }
-    })
+    });
 
-    this.products = newProducts;
 
     await Promise.all(newProducts.map(async product => {
         const existProduct = await Product.findOne({
@@ -74,6 +73,8 @@ BasketSchema.pre('save', async function (next) {
     }))
 
     this.totalPrice = totalPrice;
+    this.products = newProducts;
+
     next();
 });
 
