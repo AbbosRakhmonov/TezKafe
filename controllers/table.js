@@ -234,20 +234,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: "$activeOrders"
-        },
-        {
-            $lookup: {
-                from: 'products',
-                localField: 'activeOrders.products.product',
-                foreignField: '_id',
-                as: 'activeOrders.products'
-            }
-        },
-        {
-            $unwind: "$totalOrders"
-        },
-        {
             $project: {
                 typeOfTable: 1,
                 name: 1,
