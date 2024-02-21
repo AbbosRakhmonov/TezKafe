@@ -28,10 +28,14 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
 
     if (chunkNumber === totalChunks - 1) {
         // Merge all chunks
-        const mergedFileName = await mergeChunks(fileName, totalChunks);
-        await File.create({name: mergedFileName});
+        await mergeChunks(fileName, totalChunks);
+        const fileSize = fs.statSync(path.join(__dirname, "..", "uploads", fileName)).size;
+        // await File.create({name: mergedFileName});
         // Send response back to client
-        res.status(200).json(mergedFileName);
+        res.status(200).json({
+            fileName,
+            fileSize
+        });
     } else {
         res.status(200).json(`Chunk ${chunkNumber} of ${totalChunks} saved`);
     }
