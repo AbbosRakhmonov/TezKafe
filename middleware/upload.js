@@ -38,15 +38,15 @@ const mergeChunks = async (fileName, totalChunks) => {
 
     writeStream.end();
 
-    // change fileName to fileName-<timestamp>.<ext>
-    const fileExt = path.extname(fileName);
-    const fileNameWithoutExt = path.basename(fileName, fileExt);
-    const newFileName = `${fileNameWithoutExt}-${Date.now()}${fileExt}`;
+    // // change fileName to fileName-<timestamp>.<ext>
+    // const fileExt = path.extname(fileName);
+    // const fileNameWithoutExt = path.basename(fileName, fileExt);
+    // const newFileName = `${fileNameWithoutExt}-${Date.now()}${fileExt}`;
+    //
+    // // save the file with the new name
+    // await fs.promises.rename(`${mergedFilePath}/${fileName}`, `${mergedFilePath}/${newFileName}`);
 
-    // save the file with the new name
-    await fs.promises.rename(`${mergedFilePath}/${fileName}`, `${mergedFilePath}/${newFileName}`);
-
-    return newFileName;
+    return fileName;
 };
 
 module.exports = {
