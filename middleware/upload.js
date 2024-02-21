@@ -49,11 +49,6 @@ const mergeChunks = async (fileName, totalChunks) => {
         await fs.promises.unlink(finalFilePath);
         throw error;
     }
-
-    // Close the write stream
-    writeStream.end();
-
-    return finalFilePath;
 };
 
 module.exports = {
