@@ -242,11 +242,11 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $group: {
                 _id: '$_id',
-                typeOfTable: { $first: '$typeOfTable' },
-                name: { $first: '$name' },
-                waiter: { $first: '$waiter' },
-                activeOrders: { $push: '$activeOrders' }, // Group back to array
-                totalOrders: { $first: '$totalOrders' }
+                typeOfTable: {$first: '$typeOfTable'},
+                name: {$first: '$name'},
+                waiter: {$first: '$waiter'},
+                activeOrders: {$push: '$activeOrders'}, // Group back to array
+                totalOrders: {$first: '$totalOrders'}
             }
         },
         {
@@ -275,7 +275,18 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                             createdAt: '$$order.createdAt',
                             updatedAt: '$$order.updatedAt',
                             __v: '$$order.__v',
-                            products: '$$order.products'
+                            products: {
+                                $map: {
+                                    input: '$$order.products',
+                                    as: 'product',
+                                    in: {
+                                        _id: '$$product._id',
+                                        product: '$$product.product',
+                                        quantity: '$$product.quantity',
+                                        price: '$$product.price'
+                                    }
+                                }
+                            }
                         }
                     }
                 },
