@@ -12,14 +12,6 @@ const upload = multer({
     },
 })
 
-const getMetaData = async (file) => {
-    try {
-        return await sharp(file).metadata();
-    } catch (error) {
-        throw new Error(error);
-    }
-}
-
 const mergeChunks = async (fileName, totalChunks) => {
     const chunkDir = path.join(__dirname, "..", "temp");
     const mergedFilePath = path.join(__dirname, "..", "uploads");
@@ -40,10 +32,8 @@ const mergeChunks = async (fileName, totalChunks) => {
 
     let file = path.join(__dirname, "..", "uploads", fileName);
     let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toLocaleDateString('RU')}` + ".webp";
-    let metadata = await getMetaData(file);
     //     resize and save
     await sharp(file)
-        .resize({width: metadata.width / 2, kernel: sharp.kernel.lanczos3})
         .webp({quality: 90})
         .toFile(path.join(__dirname, "..", "uploads", newFileName));
     //     delete the original file
