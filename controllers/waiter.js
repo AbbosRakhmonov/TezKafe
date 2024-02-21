@@ -169,24 +169,55 @@ exports.getWaiterOrders = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
     const {table} = req.query;
 
-    const waiterTable = await Table.findOne({
-        restaurant,
-        waiter: id,
-        _id: table
-    })
-        .populate({
-            path: 'totalOrders',
-            populate: {
-                path: 'items.product',
+    const waiterTable = await Table.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(table),
+                restaurant: new mongoose.Types.ObjectId(restaurant),
+                waiter: new mongoose.Types.ObjectId(id)
             }
-        })
-        .select('totalOrders');
+        },
+        {
+            $lookup: {
+                from: 'activeorders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'activeOrders'
+            }
+        },
+        {
+            $lookup: {
+                from: 'orders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'totalOrders'
+            }
+        },
+        {
+            $project: {
+                activeOrders: 1,
+                totalOrders: 1,
+                activePrice: {
+                    $sum: '$activeOrders.totalPrice'
+                },
+                activeItems: {
+                    $sum: '$activeOrders.totalItems'
+                },
+                totalPrice: {
+                    $sum: 'orders.totalPrice'
+                },
+                totalItems: {
+                    $sum: 'orders.totalItems'
+                }
+            }
+        }
+    ]);
 
-    if (!waiterTable) {
-        return res.status(200).json([]);
+    if (!waiterTable || waiterTable.length === 0) {
+        return next(new ErrorResponse('Table not found with id of ' + table, 404));
     }
 
-    res.status(200).json(waiterTable.totalOrders);
+    res.status(200).json(waiterTable[0]);
 });
 
 // @desc      Occupy table

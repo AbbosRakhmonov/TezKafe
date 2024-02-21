@@ -222,6 +222,16 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'activeorders',
                 localField: '_id',
                 foreignField: 'table',
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: 'products',
+                            localField: 'products.product',
+                            foreignField: '_id',
+                            as: 'product'
+                        }
+                    }
+                ],
                 as: 'activeOrders'
             }
         },
@@ -230,6 +240,16 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'archiveorders',
                 localField: '_id',
                 foreignField: 'table',
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: 'products',
+                            localField: 'products.product',
+                            foreignField: '_id',
+                            as: 'product'
+                        }
+                    }
+                ],
                 as: 'archiveOrders'
             }
         },
@@ -238,6 +258,16 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'orders',
                 localField: '_id',
                 foreignField: 'table',
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: 'products',
+                            localField: 'products.product',
+                            foreignField: '_id',
+                            as: 'product'
+                        }
+                    }
+                ],
                 as: 'totalOrders'
             }
         },

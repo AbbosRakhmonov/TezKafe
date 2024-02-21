@@ -112,7 +112,7 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`You are not allowed to update a product that is in an active order`, 400));
     }
 
-    await product.updateOne({
+    let updateProduct = await product.updateOne({
         ...req.body,
         restaurant
     }, {
@@ -128,14 +128,14 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
             await oldFile.save();
         }
     } else if (req.body.avatar === null) {
-        product.photo = 'no-photo.jpg'
-        await product.save()
+        updateProduct.photo = 'no-photo.jpg'
+        await updateProduct.save()
     }
 
-    emitEventTo(`restaurant-${restaurant}`, 'updateProduct', product);
-    emitEventTo(`waiters-${restaurant}`, 'updateProduct', product);
+    emitEventTo(`restaurant-${restaurant}`, 'updateProduct', updateProduct);
+    emitEventTo(`waiters-${restaurant}`, 'updateProduct', updateProduct);
 
-    res.status(200).json(product);
+    res.status(200).json(updateProduct);
 });
 
 // @desc      Delete product
