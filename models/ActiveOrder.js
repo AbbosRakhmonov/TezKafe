@@ -50,18 +50,16 @@ ActiveOrderSchema.pre('save', async function (next) {
         return next();
     }
 
-    // combine double products and update quantity and price
+    // combine double products and update quantity and price and delete the double product
     const newProducts = [];
     this.products.forEach(product => {
-        const existProduct = newProducts.find(p => p.product.toString() === product.product.toString());
+        const existProduct = newProducts.find(p => p.product === product.product);
         if (existProduct) {
             existProduct.quantity += product.quantity;
         } else {
             newProducts.push(product);
         }
-    })
-
-    this.products = newProducts;
+    });
 
     await Promise.all(newProducts.map(async product => {
         const existProduct = await Product.findOne({
@@ -77,6 +75,7 @@ ActiveOrderSchema.pre('save', async function (next) {
     }))
 
     this.totalPrice = totalPrice;
+    this.products = newProducts;
     next();
 });
 
