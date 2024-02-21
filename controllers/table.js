@@ -231,8 +231,20 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $lookup: {
                 from: 'products',
-                localField: 'activeOrders.products.product',
-                foreignField: '_id',
+                let: {products: '$activeOrders.products.product'},
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {$in: ['$_id', '$$products']}
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            name: 1
+                        }
+                    }
+                ],
                 as: 'activeOrders.products'
             }
         },
@@ -251,14 +263,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         },
         {
             $lookup: {
-                from: 'archiveorders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'archiveOrders'
-            }
-        },
-        {
-            $lookup: {
                 from: 'orders',
                 localField: '_id',
                 foreignField: 'table',
@@ -270,7 +274,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: 1,
                 name: 1,
                 waiter: 1,
-                archiveOrders: 1,
                 activeOrders: 1,
                 totalOrders: 1,
                 activePrice: {
