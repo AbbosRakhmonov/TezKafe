@@ -53,7 +53,7 @@ ActiveOrderSchema.pre('save', async function (next) {
     // combine double products and update quantity and price and delete the double product
     const newProducts = [];
     this.products.forEach(product => {
-        const existProduct = newProducts.find(p => p.product === product.product);
+        const existProduct = newProducts.find(p => p.product.toString() === product.product.toString());
         if (existProduct) {
             existProduct.quantity += product.quantity;
         } else {
