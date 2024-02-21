@@ -20,9 +20,7 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
         fs.mkdirSync(chunkDir);
     }
 
-    console.log(chunk)
-
-    const chunkFilePath = `${chunkDir}/${fileName}.part_${chunkNumber}`;
+    const chunkFilePath = path.join(chunkDir, `${fileName}.part_${chunkNumber}`);
 
     try {
         await fs.promises.writeFile(chunkFilePath, chunk);
