@@ -234,9 +234,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: '$activeOrders'
-        },
-        {
             $project: {
                 typeOfTable: 1,
                 name: 1,
