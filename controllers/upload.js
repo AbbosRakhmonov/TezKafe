@@ -16,28 +16,25 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
 
     const chunkDir = path.join(__dirname, "..", "temp");
 
-
-    // Check if chunkDir exists, if not, create it
     if (!fs.existsSync(chunkDir)) {
-        await fs.promises.mkdir(chunkDir);
+        fs.mkdirSync(chunkDir);
     }
 
-    // Write the chunk data to a file
-    const chunkFilePath = path.join(chunkDir, `${fileName}.part_${chunkNumber}`);
-    await fs.promises.writeFile(chunkFilePath, chunk);
+    const chunkFilePath = `${chunkDir}/${fileName}.part_${chunkNumber}`;
 
-    if (chunkNumber === totalChunks - 1) {
-        // Merge all chunks
-        await mergeChunks(fileName, totalChunks);
-        const fileSize = fs.statSync(path.join(__dirname, "..", "uploads", fileName)).size;
-        // await File.create({name: mergedFileName});
-        // Send response back to client
-        res.status(200).json({
-            fileName,
-            fileSize
-        });
-    } else {
-        res.status(200).json(`Chunk ${chunkNumber} of ${totalChunks} saved`);
+    try {
+        await fs.promises.writeFile(chunkFilePath, chunk);
+        console.log(`Chunk ${chunkNumber}/${totalChunks} saved`);
+
+        if (chunkNumber === totalChunks - 1) {
+            // If this is the last chunk, merge all chunks into a single file
+            await mergeChunks(fileName, totalChunks);
+            console.log("File merged successfully");
+        }
+
+        res.status(200).json({message: "Chunk uploaded successfully"});
+    } catch (error) {
+        console.error("Error saving chunk:", error);
+        res.status(500).json({error: "Error saving chunk"});
     }
-
 });
