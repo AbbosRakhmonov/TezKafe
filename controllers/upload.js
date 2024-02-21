@@ -16,25 +16,24 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
 
     const chunkDir = path.join(__dirname, "..", "temp");
 
+
+    // Check if chunkDir exists, if not, create it
     if (!fs.existsSync(chunkDir)) {
-        fs.mkdirSync(chunkDir);
+        await fs.promises.mkdir(chunkDir);
     }
 
+    // Write the chunk data to a file
     const chunkFilePath = path.join(chunkDir, `${fileName}.part_${chunkNumber}`);
+    await fs.promises.writeFile(chunkFilePath, chunk);
 
-    try {
-        await fs.promises.writeFile(chunkFilePath, chunk);
+    if (chunkNumber === totalChunks - 1) {
+        // Merge all chunks
+        const mergedFileName = await mergeChunks(fileName, totalChunks);
 
-        if (chunkNumber === totalChunks - 1) {
-            // If this is the last chunk, merge all chunks into a single file
-            const newFileName = await mergeChunks(fileName, totalChunks);
-            await File.create({name: newFileName});
-            return res.status(200).json(newFileName);
-        }
-
+        // Send response back to client
+        res.status(200).json(mergedFileName);
+    } else {
         res.status(200).json(`Chunk ${chunkNumber} of ${totalChunks} saved`);
-    } catch (error) {
-        console.error("Error saving chunk:", error);
-        return next(new ErrorResponse("Error saving chunk", 500));
     }
+
 });
