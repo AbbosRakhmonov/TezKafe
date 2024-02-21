@@ -245,32 +245,18 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $addFields: {
-                'activeOrders.products': {
-                    $map: {
-                        input: "$activeOrders.products",
-                        as: "product",
-                        in: {
-                            product: "$$product._id",
-                            quantity: "$activeOrders.products.quantity",
-                            price: "$activeOrders.products.price",
-                            _id: "$activeOrders.products._id"
-                        }
-                    }
-                }
-            }
-        },
-        {
             $group: {
-                _id: '$_id', // Group by _id to reconstruct the array
-                typeOfTable: {$first: '$typeOfTable'},
-                name: {$first: '$name'},
-                waiter: {$first: '$waiter'},
-                archiveOrders: {$first: '$archiveOrders'},
-                totalOrders: {$first: '$totalOrders'},
-                activeOrders: {$push: '$activeOrders'}, // Push the modified activeOrders back into an array
-                activePrice: {$sum: '$activeOrders.totalPrice'}, // Recalculate activePrice and activeItems
-                activeItems: {$sum: '$activeOrders.quantity'} // Calculate sum of quantity
+                _id: "$_id",
+                typeOfTable: {$first: "$typeOfTable"},
+                name: {$first: "$name"},
+                waiter: {$first: "$waiter"},
+                activeOrders: {$push: "$activeOrders"},
+                activePrice: {
+                    $sum: '$activeOrders.totalPrice'
+                },
+                activeItems: {
+                    $sum: '$activeOrders.totalItems'
+                }
             }
         },
         {
