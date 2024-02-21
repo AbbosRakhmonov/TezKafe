@@ -54,7 +54,7 @@ const mergeChunks = async (fileName, totalChunks) => {
 
         return newFileName;
     } catch (e) {
-        throw new Error("File not found");
+        throw new Error(e);
     }
 };
 
