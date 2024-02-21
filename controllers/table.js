@@ -214,7 +214,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
 
     // aggregate tables with activePrice, activeItems, totalPrice, totalItems
 
-    // activeOrders array has product field to be populated
+    // activeOrders array has product field to be populated and stay other fields
     const tables = await Table.aggregate([
         matchStage,
         {
