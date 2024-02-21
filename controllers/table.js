@@ -214,7 +214,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
 
     // aggregate tables with activePrice, activeItems, totalPrice, totalItems
 
-
+    // activeOrders array has product field to be populated
     const tables = await Table.aggregate([
         matchStage,
         {
@@ -222,17 +222,31 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'activeorders',
                 localField: '_id',
                 foreignField: 'table',
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: 'products',
-                            localField: 'products.product',
-                            foreignField: '_id',
-                            as: 'product'
-                        }
-                    }
-                ],
                 as: 'activeOrders'
+            }
+        },
+        {
+            $unwind: "$activeOrders" // Unwind the activeOrders array to perform lookup on each element
+        },
+        {
+            $lookup: {
+                from: 'products',
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $group: {
+                _id: '$_id', // Group by _id to reconstruct the array
+                typeOfTable: {$first: '$typeOfTable'},
+                name: {$first: '$name'},
+                waiter: {$first: '$waiter'},
+                archiveOrders: {$first: '$archiveOrders'},
+                totalOrders: {$first: '$totalOrders'},
+                activeOrders: {$push: '$activeOrders'}, // Push the modified activeOrders back into an array
+                activePrice: {$sum: '$activeOrders.totalPrice'}, // Recalculate activePrice and activeItems
+                activeItems: {$sum: '$activeOrders.totalItems'}
             }
         },
         {
@@ -240,16 +254,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'archiveorders',
                 localField: '_id',
                 foreignField: 'table',
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: 'products',
-                            localField: 'products.product',
-                            foreignField: '_id',
-                            as: 'product'
-                        }
-                    }
-                ],
                 as: 'archiveOrders'
             }
         },
@@ -258,16 +262,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'orders',
                 localField: '_id',
                 foreignField: 'table',
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: 'products',
-                            localField: 'products.product',
-                            foreignField: '_id',
-                            as: 'product'
-                        }
-                    }
-                ],
                 as: 'totalOrders'
             }
         },

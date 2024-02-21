@@ -247,7 +247,8 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
             table,
             products: activeOrder.products,
             restaurant,
-            waiter
+            waiter,
+            totalPrice: 0
         });
     }
 
