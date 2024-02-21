@@ -248,7 +248,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 totalPrice: {$sum: '$totalOrders.totalPrice'},
                 totalItems: {$sum: '$totalOrders.totalItems'}
             }
-        }
+        },
         {
             $lookup: {
                 from: 'orders',
