@@ -24,11 +24,9 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
 
     try {
         await fs.promises.writeFile(chunkFilePath, chunk);
-        console.log(`Chunk ${chunkNumber}/${totalChunks} saved`);
 
         if (chunkNumber === totalChunks - 1) {
             // If this is the last chunk, merge all chunks into a single file
-            console.log(fileName)
             const newFileName = await mergeChunks(fileName, totalChunks);
             await File.create({name: newFileName});
             return res.status(200).json(newFileName);

@@ -41,7 +41,8 @@ const mergeChunks = async (fileName, totalChunks) => {
 
     // get the file
     let file = path.join(__dirname, "..", "uploads", fileName);
-    let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + (convertToWebp ? ".webp" : "");
+    console.log(file)
+    let newFileName = fileName.replace(/\.[^/.]+$/, "") + `-${new Date().toISOString()}` + ".webp"
     //     resize and save
     await sharp(file)
         .webp({quality: 90})
