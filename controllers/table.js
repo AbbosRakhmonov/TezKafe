@@ -243,14 +243,14 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                             }
                         }
                     },
-                    {
-                        $unwind: {
-                            path: '$$productIds',
-                            preserveNullAndEmptyArrays: true
-                        }
-                    }
                 ],
                 as: 'activeOrders.products.product'
+            }
+        },
+        {
+            $unwind: {
+                path: '$activeOrders.products.product',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
