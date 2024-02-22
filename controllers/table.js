@@ -232,12 +232,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
@@ -246,9 +240,21 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products.product',
-                preserveNullAndEmptyArrays: true
+            $addFields: {
+                'activeOrders.products': {
+                    $map: {
+                        input: '$activeOrders.products',
+                        as: 'product',
+                        in: {
+                            $mergeObjects: [
+                                '$$product',
+                                {
+                                    product: { $arrayElemAt: ['$$product.product', 0] }
+                                }
+                            ]
+                        }
+                    }
+                }
             }
         },
         {
@@ -258,64 +264,12 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: { $first: '$typeOfTable' },
                 waiter: { $first: '$waiter' },
                 activeOrders: {
-                    $push: {
-                        _id: '$activeOrders._id',
-                        table: '$activeOrders.table',
-                        waiter: '$activeOrders.waiter',
-                        totalPrice: '$activeOrders.totalPrice',
-                        restaurant: '$activeOrders.restaurant',
-                        products: {
-                            product: '$activeOrders.products.product',
-                            quantity: '$activeOrders.products.quantity',
-                            price: '$activeOrders.products.price'
-                        },
-                        createdAt: '$activeOrders.createdAt',
-                        updatedAt: '$activeOrders.updatedAt',
-                        __v: '$activeOrders.__v'
-                    }
+                    $push: '$activeOrders'
                 }
-            }
-        },
-        {
-            $lookup: {
-                from: 'orders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'totalOrders'
-            }
-        },
-        {
-            $unwind: {
-                path: '$totalOrders',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $addFields: {
-                activeOrders: {
-                    $ifNull: ["$activeOrders", null],
-                },
-                totalOrders: {
-                    $ifNull: ["$totalOrders", null]
-                },
-                activePrice: {
-                    $ifNull: ["$activeOrders.totalPrice", 0] // Handle null values
-                },
-                totalPrice: {
-                    $ifNull: ["$totalOrders.totalPrice", 0] // Handle null values
-                },
-            }
-        },
-        {
-            $project: {
-                typeOfTable: 1,
-                name: 1,
-                waiter: 1,
-                activeOrders: 1,
-                totalOrders: 1,
             }
         }
     ]);
+
 
 
     res.status(200).json(tables);
