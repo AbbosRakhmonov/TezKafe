@@ -244,9 +244,9 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                         }
                     },
                     {
-                        $project: {
-                            quantity: 1,
-                            price: 1,
+                        $unwind: {
+                            path: '$$productIds',
+                            preserveNullAndEmptyArrays: true
                         }
                     }
                 ],
