@@ -232,6 +232,12 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders.products',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
@@ -240,9 +246,10 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products.product',
-                preserveNullAndEmptyArrays: true
+            $addFields: {
+                "activeOrders.products.product": {
+                    $arrayElemAt: [ "$activeOrders.products.product", 0 ]
+                }
             }
         },
         {
