@@ -232,30 +232,38 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders.products',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $lookup: {
                 from: 'products',
-                let: {productIds: {$ifNull: ['$activeOrders.products.product', []]}},
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $in: ['$_id', '$$productIds']
-                            }
-                        }
-                    },
-                ],
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
                 as: 'activeOrders.products.product'
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products',
-            }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders.products.product',
-                preserveNullAndEmptyArrays: true
+            $group: {
+                _id: '$_id',
+                name: {$first: '$name'},
+                typeOfTable: {$first: '$typeOfTable'},
+                waiter: {$first: '$waiter'},
+                activeOrders: {
+                    $push: {
+                        _id: '$activeOrders._id',
+                        table: '$activeOrders.table',
+                        waiter: '$activeOrders.waiter',
+                        totalPrice: '$activeOrders.totalPrice',
+                        restaurant: '$activeOrders.restaurant',
+                        products: '$activeOrders.products',
+                        createdAt: '$activeOrders.createdAt',
+                        updatedAt: '$activeOrders.updatedAt',
+                        __v: '$activeOrders.__v'
+                    }
+                }
             }
         },
         {
