@@ -256,7 +256,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         },
         {
             $unwind: {
-                path: 'totalOrders',
+                path: '$totalOrders',
                 preserveNullAndEmptyArrays: true
             }
         },
