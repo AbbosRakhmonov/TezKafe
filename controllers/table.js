@@ -197,40 +197,156 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user;
     const {type, occupied} = req.query;
     let matchStage = {
-        restaurant: new mongoose.Types.ObjectId(restaurant) // Ensure restaurant field is an ObjectId
+        $match: {
+            restaurant: new mongoose.Types.ObjectId(restaurant) // Ensure restaurant field is an ObjectId
+        }
     };
 
     // Dynamically add query parameters to the match stage
     if (type) {
-        matchStage.typeOfTable = new mongoose.Types.ObjectId(type);
+        matchStage.$match.typeOfTable = new mongoose.Types.ObjectId(type);
     }
-
     if (occupied !== undefined) {
         const isOccupied = JSON.parse(occupied);
-        matchStage.waiter = isOccupied ? {$ne: null} : null;
+        matchStage.$match.waiter = isOccupied ? {$ne: null} : null;
     }
 
 
     // aggregate tables with activePrice, totalPrice,
 
-    const tables = await Table.find(matchStage)
-        .populate('waiter typeOfTable')
-        .populate({
-            path: 'activeOrders',
-            populate: {
-                path: 'products.product',
-                model: 'Product'
+    // activeOrders array has product field to be populated and stay other fields
+    const tables = await Table.aggregate([
+        matchStage,
+        {
+            $lookup: {
+                from: 'activeorders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'activeOrders'
             }
-        })
-        .populate({
-            path: 'totalOrders',
-            populate: {
-                path: 'products.product',
-                model: 'Product'
+        },
+        {
+            $lookup: {
+                from: 'orders',
+                localField: '_id',
+                foreignField: 'table',
+                as: 'totalOrders'
             }
-        })
-        .lean()
-
+        },
+        {
+            $lookup: {
+                from: 'waiters',
+                localField: 'waiter',
+                foreignField: '_id',
+                as: 'waiter'
+            }
+        },
+        {
+            $lookup: {
+                from: 'typesoftables',
+                localField: 'typeOfTable',
+                foreignField: '_id',
+                as: 'typeOfTable'
+            }
+        },
+        {
+            $addFields: {
+                activeOrders: {
+                    $map: {
+                        input: '$activeOrders',
+                        as: 'activeOrder',
+                        in: {
+                            $mergeObjects: [
+                                '$$activeOrder',
+                                {
+                                    products: {
+                                        $map: {
+                                            input: '$$activeOrder.products',
+                                            as: 'product',
+                                            in: {
+                                                $mergeObjects: [
+                                                    '$$product',
+                                                    {
+                                                        product: {
+                                                            $arrayElemAt: [
+                                                                {
+                                                                    $filter: {
+                                                                        input: '$products',
+                                                                        cond: {
+                                                                            $eq: ['$$this._id', '$$product.product']
+                                                                        }
+                                                                    }
+                                                                },
+                                                                0
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                totalOrders: {
+                    $map: {
+                        input: '$totalOrders',
+                        as: 'totalOrder',
+                        in: {
+                            $mergeObjects: [
+                                '$$totalOrder',
+                                {
+                                    products: {
+                                        $map: {
+                                            input: '$$totalOrder.products',
+                                            as: 'product',
+                                            in: {
+                                                $mergeObjects: [
+                                                    '$$product',
+                                                    {
+                                                        product: {
+                                                            $arrayElemAt: [
+                                                                {
+                                                                    $filter: {
+                                                                        input: '$products',
+                                                                        cond: {
+                                                                            $eq: ['$$this._id', '$$product.product']
+                                                                        }
+                                                                    }
+                                                                },
+                                                                0
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                typeOfTable: 1,
+                name: 1,
+                waiter: 1,
+                activeOrders: 1,
+                totalOrders: 1,
+                activePrice: {
+                    $sum: '$activeOrders.totalPrice'
+                },
+                totalPrice: {
+                    $sum: '$totalOrders.totalPrice'
+                }
+            }
+        }
+    ]);
 
     res.status(200).json(tables);
 });
