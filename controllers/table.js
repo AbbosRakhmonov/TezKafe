@@ -234,10 +234,12 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         .lean()
 
     for (let table of tables) {
-        table.activePrice = table.activeOrders[0].products.reduce((acc, order) => acc + order.price, 0);
-        table.activeItems = table.activeOrders[0].products.length;
-        table.totalPrice = table.totalOrders[0].products.reduce((acc, order) => acc + order.price, 0);
-        table.totalItems = table.totalOrders[0].products.length;
+        if (table.activeOrders.length !== 0) {
+            table.activePrice = table.activeOrders[0].products.reduce((acc, order) => acc + order.price, 0);
+            table.activeItems = table.activeOrders[0].products.length;
+            table.totalPrice = table.totalOrders[0].products.reduce((acc, order) => acc + order.price, 0);
+            table.totalItems = table.totalOrders[0].products.length;
+        }
     }
 
     res.status(200).json(tables);
