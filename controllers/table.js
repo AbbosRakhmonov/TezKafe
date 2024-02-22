@@ -234,7 +234,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $lookup: {
                 from: 'products',
-                let: { productIds: { $ifNull: ['$activeOrders.products.product', []] } },
+                let: {productIds: {$ifNull: ['$activeOrders.products.product', []]}},
                 pipeline: [
                     {
                         $match: {
@@ -242,9 +242,15 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                                 $in: ['$_id', '$$productIds']
                             }
                         }
+                    },
+                    {
+                        $project: {
+                            quantity: 1,
+                            price: 1,
+                        }
                     }
                 ],
-                as: 'activeOrders.products'
+                as: 'activeOrders.products.product'
             }
         },
         {
