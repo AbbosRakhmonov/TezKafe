@@ -212,7 +212,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     }
 
 
-    // aggregate tables with activePrice, activeItems, totalPrice, totalItems
+    // aggregate tables with activePrice, totalPrice,
 
     // activeOrders array has product field to be populated and stay other fields
     const tables = await Table.aggregate([
@@ -228,26 +228,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $unwind: {
                 path: '$activeOrders',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $lookup: {
-                from: "products",
-                localField: "activeOrders.products.product",
-                foreignField: "_id",
-                as: "activeOrders.products.product"
-            }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders.products',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders.products.product',
                 preserveNullAndEmptyArrays: true
             }
         },
@@ -285,15 +265,9 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 activePrice: {
                     $sum: '$activeOrders.totalPrice'
                 },
-                activeItems: {
-                    $sum: '$activeOrders.totalItems'
-                },
                 totalPrice: {
                     $sum: 'totalOrders.totalPrice'
                 },
-                totalItems: {
-                    $sum: 'totalOrders.totalItems'
-                }
             }
         }
     ])
