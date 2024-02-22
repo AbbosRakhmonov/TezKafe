@@ -232,31 +232,19 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products.product'
-            }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders.products.product',
-                preserveNullAndEmptyArrays: true
+                as: 'activeOrders.products'
             }
         },
         {
             $group: {
                 _id: '$_id',
-                name: {$first: '$name'},
-                typeOfTable: {$first: '$typeOfTable'},
-                waiter: {$first: '$waiter'},
+                name: { $first: '$name' },
+                typeOfTable: { $first: '$typeOfTable' },
+                waiter: { $first: '$waiter' },
                 activeOrders: {
                     $push: {
                         _id: '$activeOrders._id',
@@ -264,12 +252,8 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                         waiter: '$activeOrders.waiter',
                         totalPrice: '$activeOrders.totalPrice',
                         restaurant: '$activeOrders.restaurant',
-                        products: {
-                            product: '$activeOrders.products.product',
-                            quantity: '$activeOrders.products.quantity',
-                            price: '$activeOrders.products.price'
-                        },
-                        createdAt: '$activeOrders.createdAt',
+                        products: '$activeOrders.products',
+                        createdAt: '$activeOrders.createdAt'
                     }
                 }
             }
@@ -291,17 +275,17 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $addFields: {
                 activeOrders: {
-                    $ifNull: ["$activeOrders", null],
+                    $ifNull: ['$activeOrders', null],
                 },
                 totalOrders: {
-                    $ifNull: ["$totalOrders", null]
+                    $ifNull: ['$totalOrders', null]
                 },
                 activePrice: {
-                    $ifNull: ["$activeOrders.totalPrice", 0] // Handle null values
+                    $ifNull: ['$activeOrders.totalPrice', 0] // Handle null values
                 },
                 totalPrice: {
-                    $ifNull: ["$totalOrders.totalPrice", 0] // Handle null values
-                },
+                    $ifNull: ['$totalOrders.totalPrice', 0] // Handle null values
+                }
             }
         },
         {
@@ -310,10 +294,11 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 name: 1,
                 waiter: 1,
                 activeOrders: 1,
-                totalOrders: 1,
+                totalOrders: 1
             }
         }
     ]);
+
 
 
     res.status(200).json(tables);
