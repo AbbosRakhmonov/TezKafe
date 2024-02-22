@@ -44,6 +44,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     if (!table) {
         return next(new ErrorResponse('Please provide a table', 400));
     }
+    console.log(restaurant, table, id)
 
     const existTable = await Table.findOne({
         _id: new mongoose.Types.ObjectId(table),
