@@ -236,9 +236,13 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     for (let table of tables) {
         if (table.activeOrders.length !== 0) {
             table.activeOrders = table.activeOrders[0];
+        } else {
+            table.activeOrders = null
         }
         if (table.totalOrders.length !== 0) {
             table.totalOrders = table.totalOrders[0];
+        } else {
+            table.totalOrders = null
         }
     }
 
