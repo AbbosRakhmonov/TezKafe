@@ -233,14 +233,15 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         })
         .lean()
 
-    // for (let table of tables) {
-    //     if (table.activeOrders.length !== 0) {
-    //         table.activePrice = table.activeOrders[0].products.reduce((acc, order) => acc + order.price, 0);
-    //         table.activeItems = table.activeOrders[0].products.length;
-    //         table.totalPrice = table.totalOrders[0].products.reduce((acc, order) => acc + order.price, 0);
-    //         table.totalItems = table.totalOrders[0].products.length;
-    //     }
-    // }
+    for (let table of tables) {
+        if (table.activeOrders.length !== 0) {
+            let activeOrder = table.activeOrders[0];
+            if (activeOrder.products.length !== 0) {
+                table.activePrice = activeOrder.products.reduce((acc, product) => acc + product.price);
+                table.activeItems = activeOrder.products.length;
+            }
+        }
+    }
 
     res.status(200).json(tables);
 });
