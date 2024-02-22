@@ -1,6 +1,3 @@
-const sharp = require('sharp');
-const path = require('path');
-const fs = require("fs");
 const multer = require('multer');
 
 // Temporary storage configuration
@@ -12,32 +9,6 @@ const upload = multer({
     },
 })
 
-const mergeChunks = async (fileName, totalChunks) => {
-    const chunkDir = path.join(__dirname, "..", "temp");
-    const mergedFilePath = path.join(__dirname, "..", "uploads");
-
-    if (!fs.existsSync(mergedFilePath)) {
-        fs.mkdirSync(mergedFilePath);
-    }
-
-    const writeStream = fs.createWriteStream(`${mergedFilePath}/${fileName}`);
-    for (let i = 0; i < totalChunks; i++) {
-        const chunkFilePath = `${chunkDir}/${fileName}.part_${i}`;
-        const chunkBuffer = fs.readFileSync(chunkFilePath);
-        writeStream.write(chunkBuffer);
-        fs.unlinkSync(chunkFilePath); // Delete the individual chunk file after merging
-    }
-
-    writeStream.end(); // End the stream
-    writeStream.on('finish', () => {
-        console.log('File has been merged successfully');
-    });
-    writeStream.on('error', (err) => {
-        throw new Error('Error merging chunks');
-    });
-};
-
 module.exports = {
     upload,
-    mergeChunks
 };
