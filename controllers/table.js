@@ -232,49 +232,40 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders.products',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products'
+                as: 'activeOrders.products.product'
             }
         },
         {
-            $addFields: {
-                'activeOrders.products': {
-                    $map: {
-                        input: '$activeOrders.products',
-                        as: 'product',
-                        in: {
-                            $mergeObjects: [
-                                '$$product',
-                                {
-                                    product: {$arrayElemAt: ['$$product.product', 0]}
-                                }
-                            ]
-                        }
-                    }
-                }
+            $unwind: {
+                path: '$activeOrders.products.product',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
             $group: {
                 _id: '$_id',
-                name: {$first: '$name'},
-                typeOfTable: {$first: '$typeOfTable'},
-                waiter: {$first: '$waiter'},
+                name: { $first: '$name' },
+                typeOfTable: { $first: '$typeOfTable' },
+                waiter: { $first: '$waiter' },
                 activeOrders: {
-                    $push: '$activeOrders'
-                }
-            }
-        },
-        {
-            $addFields: {
-                activeOrders: {
-                    $cond: {
-                        if: {$eq: [{$type: '$activeOrders'}, 'missing']},
-                        then: [],
-                        else: '$activeOrders'
+                    $push: {
+                        _id: '$activeOrders._id',
+                        table: '$activeOrders.table',
+                        waiter: '$activeOrders.waiter',
+                        totalPrice: '$activeOrders.totalPrice',
+                        restaurant: '$activeOrders.restaurant',
+                        products: '$activeOrders.products',
+                        createdAt: '$activeOrders.createdAt'
                     }
                 }
             }
@@ -296,7 +287,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $addFields: {
                 activeOrders: {
-                    $ifNull: ['$activeOrders', []]
+                    $ifNull: ['$activeOrders', null],
                 },
                 totalOrders: {
                     $ifNull: ['$totalOrders', null]
