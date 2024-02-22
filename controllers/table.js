@@ -232,40 +232,23 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders.products',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products'
+                as: 'activeOrders.products.product'
             }
         },
         {
-            $addFields: {
-                'activeOrders.products': {
-                    $cond: {
-                        if: { $isArray: '$activeOrders.products' },
-                        then: '$activeOrders.products',
-                        else: [ '$activeOrders.products' ] // Ensure it's an array
-                    }
-                }
-            }
-        },
-        {
-            $addFields: {
-                'activeOrders.products': {
-                    $map: {
-                        input: '$activeOrders.products',
-                        as: 'product',
-                        in: {
-                            $mergeObjects: [
-                                '$$product',
-                                {
-                                    product: { $arrayElemAt: ['$$product.product', 0] }
-                                }
-                            ]
-                        }
-                    }
-                }
+            $unwind: {
+                path: '$activeOrders.products.product',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -275,7 +258,15 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 typeOfTable: { $first: '$typeOfTable' },
                 waiter: { $first: '$waiter' },
                 activeOrders: {
-                    $push: '$activeOrders'
+                    $push: {
+                        _id: '$activeOrders._id',
+                        table: '$activeOrders.table',
+                        waiter: '$activeOrders.waiter',
+                        totalPrice: '$activeOrders.totalPrice',
+                        restaurant: '$activeOrders.restaurant',
+                        products: '$activeOrders.products',
+                        createdAt: '$activeOrders.createdAt'
+                    }
                 }
             }
         },
@@ -319,6 +310,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         }
     ]);
+
 
 
 
