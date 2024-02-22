@@ -197,109 +197,40 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user;
     const {type, occupied} = req.query;
     let matchStage = {
-        $match: {
-            restaurant: new mongoose.Types.ObjectId(restaurant) // Ensure restaurant field is an ObjectId
-        }
+        restaurant: new mongoose.Types.ObjectId(restaurant) // Ensure restaurant field is an ObjectId
     };
 
     // Dynamically add query parameters to the match stage
     if (type) {
-        matchStage.$match.typeOfTable = new mongoose.Types.ObjectId(type);
+        matchStage.typeOfTable = new mongoose.Types.ObjectId(type);
     }
+
     if (occupied !== undefined) {
         const isOccupied = JSON.parse(occupied);
-        matchStage.$match.waiter = isOccupied ? {$ne: null} : null;
+        matchStage.waiter = isOccupied ? {$ne: null} : null;
     }
 
 
     // aggregate tables with activePrice, totalPrice,
 
-    // activeOrders array has product field to be populated and stay other fields
-    const tables = await Table.aggregate([
-        matchStage,
-        {
-            $lookup: {
-                from: 'activeorders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'activeOrders'
+    const tables = await Table.find(matchStage)
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
             }
-        },
-        {
-            $unwind: {
-                path: '$activeOrders',
-                preserveNullAndEmptyArrays: true
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
             }
-        },
-        {
-            $lookup: {
-                from: 'products',
-                localField: 'activeOrders.products.product',
-                foreignField: '_id',
-                as: 'activeOrders.products.product'
-            }
-        },
-        {
-            $group: {
-                _id: '$_id',
-                name: {$first: '$name'},
-                typeOfTable: {$first: '$typeOfTable'},
-                waiter: {$first: '$waiter'},
-                activeOrders: {
-                    $push: {
-                        _id: '$activeOrders._id',
-                        table: '$activeOrders.table',
-                        waiter: '$activeOrders.waiter',
-                        totalPrice: '$activeOrders.totalPrice',
-                        restaurant: '$activeOrders.restaurant',
-                        products: '$activeOrders.products',
-                        createdAt: '$activeOrders.createdAt',
-                        updatedAt: '$activeOrders.updatedAt',
-                        __v: '$activeOrders.__v'
-                    }
-                }
-            }
-        },
-        {
-            $lookup: {
-                from: 'orders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'totalOrders'
-            }
-        },
-        {
-            $unwind: {
-                path: '$totalOrders',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $addFields: {
-                activeOrders: {
-                    $ifNull: ["$activeOrders", null],
-                },
-                totalOrders: {
-                    $ifNull: ["$totalOrders", null]
-                },
-                activePrice: {
-                    $ifNull: ["$activeOrders.totalPrice", 0] // Handle null values
-                },
-                totalPrice: {
-                    $ifNull: ["$totalOrders.totalPrice", 0] // Handle null values
-                },
-            }
-        },
-        {
-            $project: {
-                typeOfTable: 1,
-                name: 1,
-                waiter: 1,
-                activeOrders: 1,
-                totalOrders: 1,
-            }
-        }
-    ])
+        })
+        .lean()
+
 
     res.status(200).json(tables);
 });
