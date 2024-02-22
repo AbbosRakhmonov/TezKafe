@@ -46,9 +46,9 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     }
 
     const existTable = await Table.findOne({
-        _id: table,
-        restaurant: restaurant,
-        waiter: id
+        _id: new mongoose.Types.ObjectId(table),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+        waiter: new mongoose.Types.ObjectId(id)
     })
 
     if (!existTable) {
