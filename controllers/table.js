@@ -232,11 +232,23 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders.products',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products'
+                as: 'activeOrders.products.product'
+            }
+        },
+        {
+            $unwind: {
+                path: '$activeOrders.products.product',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -252,7 +264,11 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                         waiter: '$activeOrders.waiter',
                         totalPrice: '$activeOrders.totalPrice',
                         restaurant: '$activeOrders.restaurant',
-                        products: '$activeOrders.products',
+                        products: {
+                            product: '$activeOrders.products.product',
+                            quantity: '$activeOrders.products.quantity',
+                            price: '$activeOrders.products.price'
+                        },
                         createdAt: '$activeOrders.createdAt',
                         updatedAt: '$activeOrders.updatedAt',
                         __v: '$activeOrders.__v'
@@ -300,6 +316,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         }
     ]);
+
 
     res.status(200).json(tables);
 });
