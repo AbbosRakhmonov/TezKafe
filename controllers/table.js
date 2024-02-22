@@ -47,63 +47,13 @@ exports.createTable = asyncHandler(async (req, res, next) => {
 
         await session.commitTransaction();
 
-        table = await Table.aggregate(
-            [
-                {
-                    $match: {
-                        _id: table._id
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'activeorders',
-                        localField: '_id',
-                        foreignField: 'table',
-                        as: 'activeOrders'
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'archiveorders',
-                        localField: '_id',
-                        foreignField: 'table',
-                        as: 'archiveOrders'
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'orders',
-                        localField: '_id',
-                        foreignField: 'table',
-                        as: 'totalOrders'
-                    }
-                },
-                {
-                    $project: {
-                        typeOfTable: 1,
-                        name: 1,
-                        waiter: 1,
-                        archiveOrders: 1,
-                        activeOrders: 1,
-                        totalOrders: 1,
-                        activePrice: {
-                            $sum: '$activeOrders.totalPrice'
-                        },
-                        activeItems: {
-                            $sum: '$activeOrders.totalItems'
-                        },
-                        totalPrice: {
-                            $sum: 'orders.totalPrice'
-                        },
-                        totalItems: {
-                            $sum: 'orders.totalItems'
-                        }
-                    }
-                }
-            ]
-        )
+        table = await Table.findOne({
+            _id: table._id
+        })
+            .populate('waiter typeOfTable')
 
-        table = table[0];
+        table.activeOrders = null;
+        table.totalOrders = null;
 
         if (waiter) {
             emitEventTo(waiter, 'newTable', table);
@@ -128,64 +78,39 @@ exports.getTable = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide a table id', 400));
     }
 
-    let table = await Table.aggregate(
-        [
-            {
-                $match: {
-                    _id: new mongoose.Types.ObjectId(req.params.id),
-                    restaurant: new mongoose.Types.ObjectId(restaurant)
-                }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $project: {
-                    typeOfTable: 1,
-                    name: 1,
-                    waiter: 1,
-                    archiveOrders: 1,
-                    activeOrders: 1,
-                    totalOrders: 1,
-                    activePrice: {
-                        $sum: '$activeOrders.totalPrice'
-                    },
-                    activeItems: {
-                        $sum: '$activeOrders.totalItems'
-                    },
-                    totalPrice: {
-                        $sum: 'orders.totalPrice'
-                    },
-                    totalItems: {
-                        $sum: 'orders.totalItems'
-                    }
-                }
+    const table = await Table.findOne({
+        _id: new mongoose.Types.ObjectId(req.params.id),
+        restaurant: new mongoose.Types.ObjectId(restaurant)
+    })
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
             }
-        ]
-    )
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+        .lean()
 
-    table = table[0];
+    if (table) {
+        if (table.activeOrders.length !== 0) {
+            table.activeOrders = table.activeOrders[0];
+        } else {
+            table.activeOrders = null
+        }
+        if (table.totalOrders.length !== 0) {
+            table.totalOrders = table.totalOrders[0];
+        } else {
+            table.totalOrders = null
+        }
+    }
 
     res.status(200).json(table);
 });
@@ -211,10 +136,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         matchStage.$match.waiter = isOccupied ? {$ne: null} : null;
     }
 
-
-    // aggregate tables with activePrice, totalPrice,
-
-    // activeOrders array has product field to be populated and stay other fields
     const tables = await Table.find(matchStage.$match)
         .populate('waiter typeOfTable')
         .populate({
@@ -290,64 +211,34 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
         new: true,
         runValidators: true
     })
-
-    updatedTable = await Table.aggregate(
-        [
-            {
-                $match: {
-                    _id: updatedTable._id,
-                }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $project: {
-                    typeOfTable: 1,
-                    name: 1,
-                    waiter: 1,
-                    archiveOrders: 1,
-                    activeOrders: 1,
-                    totalOrders: 1,
-                    activePrice: {
-                        $sum: '$activeOrders.totalPrice'
-                    },
-                    activeItems: {
-                        $sum: '$activeOrders.totalItems'
-                    },
-                    totalPrice: {
-                        $sum: 'orders.totalPrice'
-                    },
-                    totalItems: {
-                        $sum: 'orders.totalItems'
-                    }
-                }
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
             }
-        ]
-    )
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
 
-    updatedTable = updatedTable[0];
+    if (table) {
+        if (table.activeOrders.length !== 0) {
+            table.activeOrders = table.activeOrders[0];
+        } else {
+            table.activeOrders = null
+        }
+        if (table.totalOrders.length !== 0) {
+            table.totalOrders = table.totalOrders[0];
+        } else {
+            table.totalOrders = null
+        }
+    }
 
     if (waiter) {
         emitEventTo(waiter, 'updateTable', updatedTable);
@@ -414,7 +305,23 @@ exports.setCodeToTable = asyncHandler(async (req, res, next) => {
     const {id} = req.params;
     let table = await Table.findOne({
         _id: id
-    }).select('+code')
+    })
+        .select('+code')
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
 
     if (!table) {
         return next(new ErrorResponse(`Table not found with id of ${id}`, 404));
@@ -429,63 +336,17 @@ exports.setCodeToTable = asyncHandler(async (req, res, next) => {
 
     await table.save();
 
-    table = await Table.aggregate(
-        [
-            {
-                $match: {
-                    _id: table._id
-                }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $project: {
-                    typeOfTable: 1,
-                    name: 1,
-                    waiter: 1,
-                    archiveOrders: 1,
-                    activeOrders: 1,
-                    totalOrders: 1,
-                    activePrice: {
-                        $sum: '$activeOrders.totalPrice'
-                    },
-                    activeItems: {
-                        $sum: '$activeOrders.totalItems'
-                    },
-                    totalPrice: {
-                        $sum: 'orders.totalPrice'
-                    },
-                    totalItems: {
-                        $sum: 'orders.totalItems'
-                    }
-                }
-            }
-        ]
-    )
+    if (table.activeOrders.length !== 0) {
+        table.activeOrders = table.activeOrders[0];
+    } else {
+        table.activeOrders = null
+    }
 
-    table = table[0];
+    if (table.totalOrders.length !== 0) {
+        table.totalOrders = table.totalOrders[0];
+    } else {
+        table.totalOrders = null
+    }
 
     res.status(200).json(table);
 });
@@ -500,7 +361,24 @@ exports.loginToTable = asyncHandler(async (req, res, next) => {
     let table = await Table.findOne({
         _id: id,
         code,
-    }).select('+code')
+    })
+        .select('+code')
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+
 
     if (!table) {
         return next(new ErrorResponse(`Table not found with id of ${id}`, 404));
@@ -510,63 +388,17 @@ exports.loginToTable = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`You are not allowed to login to an unoccupied table`, 401));
     }
 
-    table = await Table.aggregate(
-        [
-            {
-                $match: {
-                    _id: new mongoose.Types.ObjectId(req.params.id),
-                }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $project: {
-                    typeOfTable: 1,
-                    name: 1,
-                    waiter: 1,
-                    archiveOrders: 1,
-                    activeOrders: 1,
-                    totalOrders: 1,
-                    activePrice: {
-                        $sum: '$activeOrders.totalPrice'
-                    },
-                    activeItems: {
-                        $sum: '$activeOrders.totalItems'
-                    },
-                    totalPrice: {
-                        $sum: 'orders.totalPrice'
-                    },
-                    totalItems: {
-                        $sum: 'orders.totalItems'
-                    }
-                }
-            }
-        ]
-    )
+    if (table.activeOrders.length !== 0) {
+        table.activeOrders = table.activeOrders[0];
+    } else {
+        table.activeOrders = null
+    }
 
-    table = table[0];
+    if (table.totalOrders.length !== 0) {
+        table.totalOrders = table.totalOrders[0];
+    } else {
+        table.totalOrders = null
+    }
 
     res.status(200).json(table);
 })
@@ -580,8 +412,8 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
     let table = await Table.findOne({
         _id: id,
         code
-    }).select('+code')
-
+    })
+        .select('+code')
     if (!table) {
         return next(new ErrorResponse(`
     Table
@@ -600,62 +432,6 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
 
     table.call = 'calling'
     await table.save();
-
-    table = await Table.aggregate(
-        [
-            {
-                $match: {
-                    _id: table._id
-                }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $project: {
-                    typeOfTable: 1,
-                    name: 1,
-                    waiter: 1,
-                    archiveOrders: 1,
-                    activeOrders: 1,
-                    totalOrders: 1,
-                    activePrice: {
-                        $sum: '$activeOrders.totalPrice'
-                    },
-                    activeItems: {
-                        $sum: '$activeOrders.totalItems'
-                    },
-                    totalPrice: {
-                        $sum: 'orders.totalPrice'
-                    },
-                    totalItems: {
-                        $sum: 'orders.totalItems'
-                    }
-                }
-            }
-        ]
-    )
 
     if (table.waiter) {
         emitEventTo(table.waiter, 'callWaiter', table);
@@ -678,63 +454,45 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
     session.startTransaction();
 
     try {
-        let table = await Table.aggregate([
-            {$match: {_id: new mongoose.Types.ObjectId(id), restaurant: new mongoose.Types.ObjectId(restaurant)}},
-            {
-                $lookup: {
-                    from: 'waiters',
-                    localField: 'waiter',
-                    foreignField: '_id',
-                    as: 'waiter'
+        let table = await Table.findOne({
+            _id: id,
+            restaurant
+        })
+            .populate('waiter typeOfTable')
+            .populate({
+                path: 'activeOrders',
+                populate: {
+                    path: 'products.product',
+                    model: 'Product'
                 }
-            },
-            {
-                $lookup: {
-                    from: 'archiveorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'archiveOrders'
+            })
+            .populate({
+                path: 'totalOrders',
+                populate: {
+                    path: 'products.product',
+                    model: 'Product'
                 }
-            },
-            {
-                $lookup: {
-                    from: 'activeorders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'activeOrders'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'table',
-                    as: 'totalOrders'
-                }
-            },
-            {
-                $addFields: {
-                    activePrice: {$sum: "$activeOrders.totalPrice"},
-                    activeItems: {$sum: "$activeOrders.totalItems"},
-                    totalPrice: {$sum: "$totalOrders.totalPrice"},
-                    totalItems: {$sum: "$totalOrders.totalItems"}
-                }
-            },
-            {
-                $unwind: {
-                    path: "$waiter",
-                    preserveNullAndEmptyArrays: true
-                }
-            }
-        ]).session(session);
+            })
+            .session(session)
 
-        if (!table || table.length === 0) {
-            throw new ErrorResponse('Table not found with id of ' + id, 404);
+        if (!table) {
+            throw new ErrorResponse('Table not found', 404);
         }
 
-        table = table[0]; // As aggregate returns an array, we need to get the first element
+        if (table.activeOdres.length !== 0) {
+            table.activeOrders = table.activeOrders[0];
+        } else {
+            table.activeOrders = null
+        }
 
-        if (table.activePrice > 0) {
+        if (table.totalOrders.length !== 0) {
+            table.totalOrders = table.totalOrders[0];
+        } else {
+            table.totalOrders = null
+        }
+
+
+        if (table.hasActiveOrder) {
             throw new ErrorResponse('Table has active orders', 400);
         }
 
@@ -745,7 +503,7 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             table.callId = null
         }
 
-        if (table.activePrice !== 0 && table.totalPrice !== 0) {
+        if (table.activeOrders?.totalPrice !== 0 && table.totalOrders?.totalPrice !== 0) {
             await ArchiveOrder.create({
                 table: table._id,
                 waiter: table.waiter,
@@ -767,10 +525,10 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
         table.callTime = null
         table.code = '0000'
         table.hasActiveOrder = false
-        await Table.findByIdAndUpdate(table._id, table, {session});
+
+        await table.save({session});
 
         await session.commitTransaction();
-
 
         if (waiter) {
             emitEventTo(waiter, 'closeTable', table);

@@ -3,6 +3,7 @@ const asyncHandler = require('../middleware/async');
 const Waiter = require('../models/Waiter');
 const Order = require('../models/Order');
 const ArchiveOrder = require('../models/ArchiveOrder');
+const ActiveOrder = require('../models/ActiveOrder');
 const Table = require('../models/Table');
 const Director = require('../models/Director');
 const {emitEventTo} = require('../listeners/socketManager');
@@ -110,54 +111,12 @@ exports.getWaiterTables = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide a type of table', 400));
     }
 
-    let matchStage = {
-        $match: {
-            restaurant: new mongoose.Types.ObjectId(restaurant), // Ensure restaurant field is an ObjectId
-            waiter: new mongoose.Types.ObjectId(id), // Ensure waiter field is an ObjectId
-            typeOfTable: new mongoose.Types.ObjectId(type) // Ensure typeOfTable field is an ObjectId
-        }
-    };
-
-    const tables = await Table.aggregate([
-        matchStage,
-        {
-            $lookup: {
-                from: 'activeorders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'activeOrders'
-            }
-        },
-        {
-            $lookup: {
-                from: 'archiveorders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'archiveOrders'
-            }
-        },
-        {
-            $lookup: {
-                from: 'orders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'totalOrders'
-            }
-        },
-        {
-            $project: {
-                name: 1,
-                createdAt: 1,
-                totalPrice: {
-                    $sum: '$totalOrders.totalPrice'
-                },
-                totalItems: {
-                    $sum: '$totalOrders.totalItems'
-                }
-            }
-        }
-    ]);
-
+    let tables = await Table.find({
+        restaurant,
+        waiter: id,
+        typeOfTable: type
+    })
+        .populate('typeOfTable')
 
     res.status(200).json(tables);
 });
@@ -169,55 +128,33 @@ exports.getWaiterOrders = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
     const {table} = req.query;
 
-    const waiterTable = await Table.aggregate([
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(table),
-                restaurant: new mongoose.Types.ObjectId(restaurant),
-                waiter: new mongoose.Types.ObjectId(id)
-            }
-        },
-        {
-            $lookup: {
-                from: 'activeorders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'activeOrders'
-            }
-        },
-        {
-            $lookup: {
-                from: 'orders',
-                localField: '_id',
-                foreignField: 'table',
-                as: 'totalOrders'
-            }
-        },
-        {
-            $project: {
-                activeOrders: 1,
-                totalOrders: 1,
-                activePrice: {
-                    $sum: '$activeOrders.totalPrice'
-                },
-                activeItems: {
-                    $sum: '$activeOrders.totalItems'
-                },
-                totalPrice: {
-                    $sum: 'orders.totalPrice'
-                },
-                totalItems: {
-                    $sum: 'orders.totalItems'
-                }
-            }
-        }
-    ]);
-
-    if (!waiterTable || waiterTable.length === 0) {
-        return next(new ErrorResponse('Table not found with id of ' + table, 404));
+    if (!table) {
+        return next(new ErrorResponse('Please provide a table', 400));
     }
 
-    res.status(200).json(waiterTable[0]);
+    let orders = await Order.find({
+        restaurant,
+        table,
+        waiter: id
+    }).populate('products.product')
+
+    let activeOrders = await ActiveOrder.find({
+        restaurant,
+        table,
+        waiter: id
+    }).populate('products.product')
+
+    let data = {}
+
+    if (orders.length > 0) {
+        data.totalOrders = orders[0]
+    }
+
+    if (activeOrders.length > 0) {
+        data.activeOrders = activeOrders[0]
+    }
+
+    res.status(200).json(data);
 });
 
 // @desc      Occupy table
