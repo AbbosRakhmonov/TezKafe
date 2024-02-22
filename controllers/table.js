@@ -233,6 +233,22 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         },
         {
             $lookup: {
+                from: 'products', // Assuming the name of the collection is 'products'
+                let: { productIds: '$activeOrders.products.product' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $in: ['$_id', '$$productIds']
+                            }
+                        }
+                    }
+                ],
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $lookup: {
                 from: 'orders',
                 localField: '_id',
                 foreignField: 'table',
@@ -252,7 +268,13 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 },
                 totalOrders: {
                     $ifNull: ["$totalOrders", null]
-                }
+                },
+                activePrice: {
+                    $ifNull: ["$activeOrders.totalPrice", 0] // Handle null values
+                },
+                totalPrice: {
+                    $ifNull: ["$totalOrders.totalPrice", 0] // Handle null values
+                },
             }
         },
         {
@@ -262,12 +284,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 waiter: 1,
                 activeOrders: 1,
                 totalOrders: 1,
-                activePrice: {
-                    $sum: '$activeOrders.totalPrice'
-                },
-                totalPrice: {
-                    $sum: 'totalOrders.totalPrice'
-                },
             }
         }
     ])
