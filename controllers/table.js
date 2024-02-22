@@ -228,6 +228,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $unwind: {
                 path: '$activeOrders',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -236,6 +237,16 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 localField: '_id',
                 foreignField: 'table',
                 as: 'totalOrders'
+            }
+        },
+        {
+            $addFields: {
+                activeOrders: {
+                    $ifNull: ["$activeOrders", []]
+                },
+                totalOrders: {
+                    $ifNull: ["$totalOrders", []]
+                }
             }
         },
         {
