@@ -242,9 +242,9 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $group: {
                 _id: '$_id',
-                name: { $first: '$name' },
-                typeOfTable: { $first: '$typeOfTable' },
-                waiter: { $first: '$waiter' },
+                name: {$first: '$name'},
+                typeOfTable: {$first: '$typeOfTable'},
+                waiter: {$first: '$waiter'},
                 activeOrders: {
                     $push: {
                         _id: '$activeOrders._id',
@@ -298,7 +298,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         }
     ]);
-
 
 
     res.status(200).json(tables);
