@@ -234,18 +234,8 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $lookup: {
                 from: 'products',
-                let: { productIds: '$activeOrders.products.product' },
+                let: { productIds: { $ifNull: ['$activeOrders.products.product', []] } },
                 pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    { $isArray: "$$productIds" }, // Check if productIds is an array
-                                    { $gt: [{ $size: "$$productIds" }, 0] } // Check if productIds is not empty
-                                ]
-                            }
-                        }
-                    },
                     {
                         $match: {
                             $expr: {
