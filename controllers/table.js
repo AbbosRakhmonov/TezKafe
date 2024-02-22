@@ -222,18 +222,23 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             populate: {
                 path: 'products.product',
                 model: 'Product'
-            },
-            limit: 1
+            }
         })
         .populate({
             path: 'totalOrders',
             populate: {
                 path: 'products.product',
                 model: 'Product'
-            },
-            limit: 1
+            }
         })
         .lean()
+
+    for (let table of tables) {
+        table.activePrice = table.activeOrders[0].products.reduce((acc, order) => acc + order.price, 0);
+        table.activeItems = table.activeOrders[0].products.length;
+        table.totalPrice = table.totalOrders[0].products.reduce((acc, order) => acc + order.price, 0);
+        table.totalItems = table.totalOrders[0].products.length;
+    }
 
     res.status(200).json(tables);
 });
