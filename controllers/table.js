@@ -222,14 +222,16 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             populate: {
                 path: 'products.product',
                 model: 'Product'
-            }
+            },
+            limit: 1
         })
         .populate({
             path: 'totalOrders',
             populate: {
                 path: 'products.product',
                 model: 'Product'
-            }
+            },
+            limit: 1
         })
         .lean()
 
