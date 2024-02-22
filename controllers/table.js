@@ -246,18 +246,11 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $addFields: {
-                "activeOrders.products.product": {
-                    $arrayElemAt: [ "$activeOrders.products.product", 0 ]
-                }
-            }
-        },
-        {
             $group: {
                 _id: '$_id',
-                name: { $first: '$name' },
-                typeOfTable: { $first: '$typeOfTable' },
-                waiter: { $first: '$waiter' },
+                name: {$first: '$name'},
+                typeOfTable: {$first: '$typeOfTable'},
+                waiter: {$first: '$waiter'},
                 activeOrders: {
                     $push: {
                         _id: '$activeOrders._id',
