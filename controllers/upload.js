@@ -30,8 +30,13 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
     }
     let filePath = path.join(tempFilePath, fileName)
     try {
+        const buffer = req.file.buffer;
+
+        if (!buffer || buffer.length === 0) {
+            return new ErrorResponse('Buffer is empty', 400)
+        }
         const writeStream = fs.createWriteStream(filePath, {flags: 'a'}); // 'a' for append mode
-        writeStream.write(req.file.buffer);
+        writeStream.write(buffer);
         // Handle errors
         writeStream.on('error', (error) => {
             console.error('Error writing to file:', error);
@@ -42,13 +47,13 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
         writeStream.on('finish', async () => {
             if (chunkNumber === totalChunks - 1) {
                 const fileBuffer = fs.readFileSync(filePath);
-                let newFileName = fileName.split('.').slice(0, -1).join('.')
+                let newFileName = fileName.split('.').slice(0, -1).join('.') + '.webp'
                 await sharp(fileBuffer)
                     .webp({lossless: true, quality: 90})
-                    .toFile(path.join(uploadsDir, `${newFileName}.webp`))
+                    .toFile(path.join(uploadsDir, newFileName))
+                await File.create({name: newFileName})
                 fs.rmSync(tempFilePath, {recursive: true, force: true});
-                let newFile = await File.create({name: `${newFileName}.webp`})
-                return res.status(201).json(newFile.name)
+                return res.status(201).json(newFileName)
             } else {
                 res.status(200).json({message: "Chunk uploaded successfully"});
             }
