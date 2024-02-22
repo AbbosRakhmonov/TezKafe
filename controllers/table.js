@@ -237,7 +237,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         if (table.activeOrders.length !== 0) {
             let activeOrder = table.activeOrders[0];
             if (activeOrder.products.length !== 0) {
-                table.activePrice = activeOrder.products.reduce((acc, product) => acc + product.price);
+                table.activePrice = activeOrder.products.reduce((acc, product) => acc + product.price, 0);
                 table.activeItems = activeOrder.products.length;
             }
         }
