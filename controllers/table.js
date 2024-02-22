@@ -226,6 +226,41 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
+            $unwind: {
+                path: '$activeOrders',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $lookup: {
+                from: 'products',
+                localField: 'activeOrders.products.product',
+                foreignField: '_id',
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                name: { $first: '$name' },
+                typeOfTable: { $first: '$typeOfTable' },
+                waiter: { $first: '$waiter' },
+                activeOrders: {
+                    $push: {
+                        _id: '$activeOrders._id',
+                        table: '$activeOrders.table',
+                        waiter: '$activeOrders.waiter',
+                        totalPrice: '$activeOrders.totalPrice',
+                        restaurant: '$activeOrders.restaurant',
+                        products: '$activeOrders.products',
+                        createdAt: '$activeOrders.createdAt',
+                        updatedAt: '$activeOrders.updatedAt',
+                        __v: '$activeOrders.__v'
+                    }
+                }
+            }
+        },
+        {
             $lookup: {
                 from: 'orders',
                 localField: '_id',
@@ -234,101 +269,25 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $lookup: {
-                from: 'waiters',
-                localField: 'waiter',
-                foreignField: '_id',
-                as: 'waiter'
-            }
-        },
-        {
-            $lookup: {
-                from: 'typesoftables',
-                localField: 'typeOfTable',
-                foreignField: '_id',
-                as: 'typeOfTable'
+            $unwind: {
+                path: '$totalOrders',
+                preserveNullAndEmptyArrays: true
             }
         },
         {
             $addFields: {
                 activeOrders: {
-                    $map: {
-                        input: '$activeOrders',
-                        as: 'activeOrder',
-                        in: {
-                            $mergeObjects: [
-                                '$$activeOrder',
-                                {
-                                    products: {
-                                        $map: {
-                                            input: '$$activeOrder.products',
-                                            as: 'product',
-                                            in: {
-                                                $mergeObjects: [
-                                                    '$$product',
-                                                    {
-                                                        product: {
-                                                            $arrayElemAt: [
-                                                                {
-                                                                    $filter: {
-                                                                        input: '$products',
-                                                                        cond: {
-                                                                            $eq: ['$$this._id', '$$product.product']
-                                                                        }
-                                                                    }
-                                                                },
-                                                                0
-                                                            ]
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
+                    $ifNull: ["$activeOrders", null],
                 },
                 totalOrders: {
-                    $map: {
-                        input: '$totalOrders',
-                        as: 'totalOrder',
-                        in: {
-                            $mergeObjects: [
-                                '$$totalOrder',
-                                {
-                                    products: {
-                                        $map: {
-                                            input: '$$totalOrder.products',
-                                            as: 'product',
-                                            in: {
-                                                $mergeObjects: [
-                                                    '$$product',
-                                                    {
-                                                        product: {
-                                                            $arrayElemAt: [
-                                                                {
-                                                                    $filter: {
-                                                                        input: '$products',
-                                                                        cond: {
-                                                                            $eq: ['$$this._id', '$$product.product']
-                                                                        }
-                                                                    }
-                                                                },
-                                                                0
-                                                            ]
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
+                    $ifNull: ["$totalOrders", null]
+                },
+                activePrice: {
+                    $ifNull: ["$activeOrders.totalPrice", 0] // Handle null values
+                },
+                totalPrice: {
+                    $ifNull: ["$totalOrders.totalPrice", 0] // Handle null values
+                },
             }
         },
         {
@@ -338,12 +297,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 waiter: 1,
                 activeOrders: 1,
                 totalOrders: 1,
-                activePrice: {
-                    $sum: '$activeOrders.totalPrice'
-                },
-                totalPrice: {
-                    $sum: '$totalOrders.totalPrice'
-                }
             }
         }
     ]);
