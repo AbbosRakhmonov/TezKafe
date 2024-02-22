@@ -46,8 +46,9 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
                 await sharp(fileBuffer)
                     .webp({lossless: true, quality: 90})
                     .toFile(path.join(uploadsDir, `${newFileName}.webp`))
-
                 fs.rmSync(tempFilePath, {recursive: true, force: true});
+                let newFile = await File.create({name: `${newFileName}.webp`})
+                return res.status(201).json(newFile.name)
             } else {
                 res.status(200).json({message: "Chunk uploaded successfully"});
             }
