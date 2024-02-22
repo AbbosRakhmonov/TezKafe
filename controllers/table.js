@@ -216,8 +216,22 @@ exports.getTables = asyncHandler(async (req, res, next) => {
 
     // activeOrders array has product field to be populated and stay other fields
     const tables = await Table.find(matchStage.$match)
-        .populate('activeOrders activeOrders.products.product')
-
+        .populate('waiter typeOfTable')
+        .populate({
+            path: 'activeOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+        .populate({
+            path: 'totalOrders',
+            populate: {
+                path: 'products.product',
+                model: 'Product'
+            }
+        })
+        .lean()
 
     res.status(200).json(tables);
 });
