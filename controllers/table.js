@@ -249,33 +249,10 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             $addFields: {
                 activeOrders: {
                     $ifNull: ["$activeOrders", null],
-                    products: {
-                        $map: {
-                            input: "$activeOrders.products",
-                            in: {
-                                $mergeObjects: [
-                                    "$$this",
-                                    {
-                                        product: {
-                                            $toObjectId: "$$this.product"
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
                 },
                 totalOrders: {
                     $ifNull: ["$totalOrders", null]
                 }
-            }
-        },
-        {
-            $lookup: {
-                from: '$activeOrders.products',
-                localField: 'activeOrders.products.product',
-                foreignField: '_id',
-                as: 'activeOrders.products.product'
             }
         },
         {
