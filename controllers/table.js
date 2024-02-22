@@ -232,12 +232,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         },
         {
-            $unwind: {
-                path: '$activeOrders.products',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
             $lookup: {
                 from: 'products',
                 localField: 'activeOrders.products.product',
@@ -248,9 +242,9 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         {
             $group: {
                 _id: '$_id',
-                name: { $first: '$name' },
-                typeOfTable: { $first: '$typeOfTable' },
-                waiter: { $first: '$waiter' },
+                name: {$first: '$name'},
+                typeOfTable: {$first: '$typeOfTable'},
+                waiter: {$first: '$waiter'},
                 activeOrders: {
                     $push: {
                         _id: '$activeOrders._id',
@@ -258,7 +252,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                         waiter: '$activeOrders.waiter',
                         totalPrice: '$activeOrders.totalPrice',
                         restaurant: '$activeOrders.restaurant',
-                        products: { $arrayToObject: [[{ k: '$_id', v: { $first: '$activeOrders.products' } }]] },
+                        products: '$activeOrders.products',
                         createdAt: '$activeOrders.createdAt',
                         updatedAt: '$activeOrders.updatedAt',
                         __v: '$activeOrders.__v'
