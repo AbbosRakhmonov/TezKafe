@@ -236,7 +236,18 @@ exports.getTables = asyncHandler(async (req, res, next) => {
                 from: 'products',
                 localField: 'activeOrders.products.product',
                 foreignField: '_id',
-                as: 'activeOrders.products.product'
+                as: 'activeOrders.products'
+            }
+        },
+        {
+            $addFields: {
+                'activeOrders.products': {
+                    $cond: {
+                        if: { $isArray: '$activeOrders.products' },
+                        then: '$activeOrders.products',
+                        else: [ '$activeOrders.products' ] // Ensure it's an array
+                    }
+                }
             }
         },
         {
@@ -308,6 +319,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
             }
         }
     ]);
+
 
 
     res.status(200).json(tables);
