@@ -201,8 +201,8 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
     const {typeOfTable, name, waiter} = req.body
 
     let updatedTable = await Table.findByIdAndUpdate(req.params.id, {
-        typeOfTable: typeOfTable || table.typeOfTable,
-        name: name || table.name,
+        typeOfTable,
+        name,
         waiter,
         setWaiterByAdmin: !!waiter,
         call: 'none',
@@ -227,16 +227,16 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
             }
         })
 
-    if (table) {
-        if (table.activeOrders.length !== 0) {
-            table.activeOrders = table.activeOrders[0];
+    if (updatedTable) {
+        if (updatedTable.activeOrders.length !== 0) {
+            updatedTable.activeOrders = updatedTable.activeOrders[0];
         } else {
-            table.activeOrders = null
+            updatedTable.activeOrders = null
         }
-        if (table.totalOrders.length !== 0) {
-            table.totalOrders = table.totalOrders[0];
+        if (updatedTable.totalOrders.length !== 0) {
+            updatedTable.totalOrders = updatedTable.totalOrders[0];
         } else {
-            table.totalOrders = null
+            updatedTable.totalOrders = null
         }
     }
 
