@@ -49,10 +49,6 @@ const ArchiveOrderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    totalItems: {
-        type: Number,
-        default: 0
-    },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',

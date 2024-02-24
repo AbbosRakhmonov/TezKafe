@@ -47,14 +47,13 @@ exports.createCategory = asyncHandler(async (req, res, next) => {
         restaurant
     })
 
-    if (req.body.photo && req.body.photo !== category.photo) {
-        await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-        const oldFile = await File.findOne({name: category.photo});
-        if (oldFile) {
-            oldFile.inuse = false;
-            await oldFile.save();
+    if (req.body.photo && req.body.photo !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: req.body.photo});
+        if (newPhoto) {
+            newPhoto.inuse = true;
+            await newPhoto.save()
         }
-    } else if (req.body.avatar === null) {
+    } else {
         category.photo = 'no-photo.jpg'
         await category.save()
     }
@@ -79,61 +78,29 @@ exports.updateCategory = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`Category not found with id of ${req.params.id}`, 404));
     }
 
-    // when table activeOrders or totalOrders includes the order which is order items includes the product which is product of the category, we can't update the category
-    const products = await Product.find({category: category._id, restaurant})
-    const productIds = products.map(product => product._id);
-
-    const orders = await Order.find({
-        items: {
-            $elemMatch: {
-                product: {
-                    $in: productIds
-                }
-            }
-        }
-    })
-    const ordersIds = orders.map(order => order._id);
-
-    const activeOrders = await Table.find({
-        $or: [
-            {
-                activeOrders: {
-                    $in: ordersIds
-                }
-            },
-            {
-                totalOrders: {
-                    $in: ordersIds
-                }
-            }
-        ],
-        restaurant,
-        occupied: true
-    })
-
-    if (activeOrders.length > 0) {
-        return next(new ErrorResponse(`You can't update this category because it's used in active orders`, 400));
-    }
-
     const {name, photo} = req.body;
 
     const result = await Category.findByIdAndUpdate(req.params.id, {
         name,
-        photo: photo || 'no-photo.jpg',
+        photo,
         restaurant
     }, {
         new: true,
         runValidators: true
     })
 
-    if (req.body.photo && req.body.photo !== category.photo) {
-        await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-        const oldFile = await File.findOne({name: category.photo});
-        if (oldFile) {
-            oldFile.inuse = false;
-            await oldFile.save();
+    if (req.body.photo && req.body.photo !== category.photo && req.body.photo !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: req.body.photo})
+        if (newPhoto) {
+            newPhoto.inuse = true
+            await newPhoto.save()
         }
-    } else if (req.body.avatar === null) {
+        const oldPhoto = await File.findOne({name: category.photo});
+        if (oldPhoto) {
+            oldPhoto.inuse = false
+            await oldPhoto.save()
+        }
+    } else if (req.body.photo === null) {
         category.photo = 'no-photo.jpg'
         await category.save()
     }
@@ -209,7 +176,12 @@ exports.deleteCategory = asyncHandler(async (req, res, next) => {
 
         await Category.deleteOne(category)
 
-        await File.findOneAndUpdate({name: category.photo}, {inuse: false});
+        const photo = await File.findOne({name: category.photo});
+
+        if (photo) {
+            photo.inuse = false
+            await photo.save({session})
+        }
 
         await session.commitTransaction();
 

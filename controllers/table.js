@@ -277,24 +277,33 @@ exports.deleteTable = asyncHandler(async (req, res, next) => {
     table`, 400));
     }
 
-    await Order.deleteMany({table: table._id});
-    await ActiveOrder.deleteMany({table: table._id});
-    await ArchiveOrder.deleteMany({table: table._id});
-    await Basket.deleteOne({table: table._id});
-    let imagePath = path.join(__dirname, `../uploads/${table.qrCode}`);
-    await Table.deleteOne({_id: table._id});
-    // delete image
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        fs.unlinkSync(imagePath);
-    } catch (err) {
-        return next(new ErrorResponse(err, 500));
+        await Order.deleteMany({table: table._id}).session(session);
+        await ActiveOrder.deleteMany({table: table._id}).session(session);
+        await ArchiveOrder.deleteMany({table: table._id}).session(session);
+        await Basket.deleteOne({table: table._id}).session(session);
+        await Table.deleteOne({_id: table._id}).session(session);
+
+        let imagePath = path.join(__dirname, `../uploads/${table.qrCode}`);
+        if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+        }
+        await session.commitTransaction();
+
+        emitEventTo(`waiters-${restaurant}`, 'deletedTable', {
+            id: req.params.id
+        });
+
+        res.status(200).json({});
+    } catch (e) {
+        await session.abortTransaction();
+        return next(new ErrorResponse(e, 500));
+    } finally {
+        await session.endSession();
     }
-
-    emitEventTo(`waiters-${restaurant}`, 'deletedTable', {
-        id: req.params.id
-    });
-
-    res.status(200).json({});
 });
 
 // @desc      Set passcode to table
@@ -507,9 +516,8 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             await ArchiveOrder.create({
                 table: table._id,
                 waiter: table.waiter,
-                totalOrders: table.totalOrders,
-                totalPrice: table.totalPrice,
-                totalItems: table.totalItems,
+                totalOrders: table.totalOrders?.products || [],
+                totalPrice: table.totalOrders?.totalPrice,
                 restaurant,
             }, {session});
 
@@ -517,6 +525,7 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             await Order.deleteMany({table: table._id}).session(session);
             const basket = await Basket.findOne({table: table._id}).session(session);
             basket.products = [];
+            basket.totalPrice = 0;
             await basket.save({session});
         }
 

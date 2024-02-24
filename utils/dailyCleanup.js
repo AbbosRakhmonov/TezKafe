@@ -8,7 +8,10 @@ async function deleteAllFilesInDir(dirPath) {
         const files = await fs.readdir(dirPath);
 
         const deleteFilePromises = files.map(file =>
-            fs.unlink(path.join(dirPath, file)),
+            fs.rm(path.join(dirPath, file), {
+                recursive: true,
+                force: true
+            }),
         );
 
         await Promise.all(deleteFilePromises);

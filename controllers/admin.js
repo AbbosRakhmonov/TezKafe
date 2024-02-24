@@ -11,6 +11,7 @@ const TypeOfTable = require('../models/TypeOfTable');
 const ArchiveOrder = require('../models/ArchiveOrder');
 const Product = require('../models/Product');
 const File = require('../models/File');
+const ActiveOrder = require('../models/ActiveOrder');
 
 const mongoose = require('mongoose');
 const bcrypt = require("bcryptjs");
@@ -38,7 +39,10 @@ exports.register = asyncHandler(async (req, res, next) => {
             return next(new ErrorResponse('Secret key is wrong', 400));
         }
 
-        const admin = await Admin.create(req.body);
+        const admin = await Admin.create({
+            ...req.body,
+            photo: 'no-photo.jpg'
+        });
 
         let token = admin.getSignedJwtToken();
         // send token in cookie and user as json
@@ -121,22 +125,31 @@ exports.registerRestaurant = asyncHandler(async (req, res, next) => {
             return next(new ErrorResponse('The phone number is already in use', 400))
         }
         const restaurant = await Restaurant.create([{photo, name, address, location}], {session});
+        if (req.body.photo && req.body.photo !== 'no-photo.jpg') {
+            const newPhoto = await File.findOne({name: req.body.photo});
+            if (newPhoto) {
+                newPhoto.inuse = true;
+                await newPhoto.save({session});
+            }
+        } else if (req.body.photo === null) {
+            restaurant.photo = 'no-photo.jpg'
+            await restaurant.save({session})
+        }
         director.restaurant = restaurant[0]._id;
-        await Director.create([{...director}], {session});
+        let newDirector = await Director.create([{...director}], {session});
+        if (director.avatar && director.avatar !== 'no-photo.jpg') {
+            const newPhoto = await File.findOne({name: director.avatar});
+            if (newPhoto) {
+                newPhoto.inuse = true;
+                await newPhoto.save({session});
+            }
+        } else if (director.avatar === null) {
+            newDirector.avatar = 'no-photo.jpg'
+            await newDirector.save({session})
+        }
         await session.commitTransaction();
         const restaurantWithDirector = await Restaurant.findById(restaurant[0]._id).populate('director');
 
-        if (req.body.photo && req.body.photo !== restaurantWithDirector.photo) {
-            await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-            const oldFile = await File.findOne({name: restaurantWithDirector.photo});
-            if (oldFile) {
-                oldFile.inuse = false;
-                await oldFile.save();
-            }
-        } else if (req.body.avatar === null) {
-            restaurantWithDirector.photo = 'no-photo.jpg'
-            await restaurantWithDirector.save()
-        }
         res.status(201).json(restaurantWithDirector);
     } catch (error) {
         await session.abortTransaction();
@@ -178,12 +191,32 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
     session.startTransaction();
     try {
         const {director, ...rest} = req.body;
-        let restaurant = await Restaurant.findById(req.params.id).session(session);
+        let restaurant = await Restaurant.findById(req.params.id)
         if (!restaurant) {
             return next(new ErrorResponse(`Restaurant not found with id of ${req.params.id}`, 404));
         }
+        const updatedRestaurant = await Restaurant.findByIdAndUpdate(req.params.id, rest, {
+            new: true,
+            runValidators: true,
+            session
+        });
+        if (req.body.photo && req.body.photo !== restaurant.photo && req.body.photo !== 'no-photo.jpg') {
+            const newPhoto = await File.findOne({name: req.body.photo});
+            if (newPhoto) {
+                newPhoto.inuse = true;
+                await newPhoto.save({session});
+            }
+            const oldFile = await File.findOne({name: restaurant.photo});
+            if (oldFile) {
+                oldFile.inuse = false;
+                await oldFile.save({session});
+            }
+        } else if (req.body.photo === null) {
+            updatedRestaurant.photo = 'no-photo.jpg'
+            await updatedRestaurant.save({session})
+        }
         if (director) {
-            let directorDoc = await Director.findById(director._id).session(session);
+            let directorDoc = await Director.findById(restaurant.director)
             if (!directorDoc) {
                 return next(new ErrorResponse(`Director not found`, 404));
             }
@@ -199,36 +232,27 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
                 runValidators: true,
                 session
             });
-            if (director.avatar && director.avatar !== directorDoc.avatar) {
-                await File.findOneAndUpdate({name: director.avatar}, {inuse: true});
+            if (director.avatar && director.avatar !== directorDoc.avatar && director.avatar !== 'no-photo.jpg') {
+                const newPhoto = await File.findOne({name: director.avatar});
+                if (newPhoto) {
+                    newPhoto.inuse = true;
+                    await newPhoto.save({session});
+                }
                 const oldFile = await File.findOne({name: directorDoc.avatar});
                 if (oldFile) {
                     oldFile.inuse = false;
-                    await oldFile.save();
+                    await oldFile.save({session});
                 }
             } else if (director.avatar === null) {
                 newGenDirector.avatar = 'no-photo.jpg'
                 await newGenDirector.save()
             }
         }
-        restaurant = await Restaurant.findByIdAndUpdate(req.params.id, rest, {
-            new: true,
-            runValidators: true,
-            session
-        });
         await session.commitTransaction();
-        if (req.body.photo && req.body.photo !== restaurant.photo) {
-            await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-            const oldFile = await File.findOne({name: restaurant.photo});
-            if (oldFile) {
-                oldFile.inuse = false;
-                await oldFile.save();
-            }
-        } else if (req.body.photo === null) {
-            restaurant.photo = 'no-photo.jpg'
-            await restaurant.save()
-        }
-        res.status(200).json(restaurant);
+
+        const restaurantWithDirector = await Restaurant.findById(updatedRestaurant._id).populate('director');
+
+        res.status(200).json(restaurantWithDirector);
     } catch (error) {
         await session.abortTransaction();
         return next(new ErrorResponse(error, 500));
@@ -241,26 +265,46 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
 // @route     DELETE /api/v1/restaurants/:id
 // @access    Private
 exports.deleteRestaurant = asyncHandler(async (req, res, next) => {
-    const restaurant = await Restaurant.findById(req.params.id)
+    const restaurant = await Restaurant.findById(req.params.id).populate('director');
 
     if (!restaurant) {
         return next(new ErrorResponse(`Restaurant not found with id of ${req.params.id}`, 404));
     }
 
-    await Promise.all([
-        Director.deleteMany({restaurant: restaurant._id}),
-        Waiter.deleteMany({restaurant: restaurant._id}),
-        Table.deleteMany({restaurant: restaurant._id}),
-        Order.deleteMany({restaurant: restaurant._id}),
-        Category.deleteMany({restaurant: restaurant._id}),
-        TypeOfTable.deleteMany({restaurant: restaurant._id}),
-        ArchiveOrder.deleteMany({restaurant: restaurant._id}),
-        Product.deleteMany({restaurant: restaurant._id}),
-    ])
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await File.findOneAndUpdate({name: restaurant.photo}, {inuse: false});
+    try {
+        await ActiveOrder.deleteMany({restaurant: req.params.id}, {session});
+        await ArchiveOrder.deleteMany({restaurant: req.params.id}, {session});
+        await Order.deleteMany({restaurant: req.params.id}, {session});
+        await Table.deleteMany({restaurant: req.params.id}, {session});
+        await Waiter.deleteMany({restaurant: req.params.id}, {session});
+        await Category.deleteMany({restaurant: req.params.id}, {session});
+        await TypeOfTable.deleteMany({restaurant: req.params.id}, {session});
+        await Product.deleteMany({restaurant: req.params.id}, {session});
+        await Director.deleteOne({restaurant: req.params.id}, {session});
+        const photo = await File.findOne({name: restaurant.photo});
+        if (photo) {
+            photo.inuse = false;
+            await photo.save({session});
+        }
+        const directorPhoto = await File.findOne({name: restaurant.director.avatar});
+        if (directorPhoto) {
+            directorPhoto.inuse = false;
+            await directorPhoto.save({session});
+        }
+        await restaurant.remove({session});
 
-    await Restaurant.deleteOne(restaurant)
+        await session.commitTransaction();
+
+        res.status(200).json({});
+    } catch (error) {
+        await session.abortTransaction();
+        return next(new ErrorResponse(error, 500));
+    } finally {
+        await session.endSession();
+    }
 
     res.status(200).json({});
 });

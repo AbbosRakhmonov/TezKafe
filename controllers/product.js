@@ -3,8 +3,11 @@ const asyncHandler = require('../middleware/async');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Table = require('../models/Table');
+const ActiveOrder = require('../models/ActiveOrder');
 const File = require('../models/File');
 const {emitEventTo} = require('../listeners/socketManager');
+const {mongo} = require('mongoose');
+const mongoose = require('mongoose');
 
 // @desc      Get all products
 // @route     GET /api/v1/products?restaurant=restaurant&category=category&available=available
@@ -56,14 +59,13 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
         restaurant
     })
 
-    if (req.body.photo && req.body.photo !== product.photo) {
-        await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-        const oldFile = await File.findOne({name: product.photo});
-        if (oldFile) {
-            oldFile.inuse = false;
-            await oldFile.save();
+    if (req.body.photo && req.body.photo !== 'no-photo.jpg') {
+        const photo = await File.findOne({name: req.body.photo});
+        if (photo) {
+            photo.inuse = true;
+            await photo.save();
         }
-    } else if (req.body.avatar === null) {
+    } else {
         product.photo = 'no-photo.jpg'
         await product.save()
     }
@@ -88,28 +90,31 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`Product not found with id of ${req.params.id}`, 404));
     }
 
+    // Check if the product is in an active order or orders
     const orders = await Order.find({
         restaurant,
-        items: {
+        products: {
             $elemMatch: {
                 product: req.params.id
             }
         }
     });
 
-    const ordersIds = orders.map(order => order._id);
+    if (orders.length > 0) {
+        return next(new ErrorResponse(`The product is in an order`, 400));
+    }
 
-    const activeOrders = await Table.find({
+    const activeOrders = await ActiveOrder.find({
         restaurant,
-        occupied: true,
-        $or: [
-            {activeOrders: {$in: ordersIds}},
-            {totalOrders: {$in: ordersIds}}
-        ]
+        products: {
+            $elemMatch: {
+                product: req.params.id
+            }
+        }
     });
 
     if (activeOrders.length > 0) {
-        return next(new ErrorResponse(`You are not allowed to update a product that is in an active order`, 400));
+        return next(new ErrorResponse(`The product is in an active order`, 400));
     }
 
     let updateProduct = await product.updateOne({
@@ -120,12 +125,16 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
         runValidators: true
     })
 
-    if (req.body.photo && req.body.photo !== product.photo) {
-        await File.findOneAndUpdate({name: req.body.photo}, {inuse: true});
-        const oldFile = await File.findOne({name: product.photo});
-        if (oldFile) {
-            oldFile.inuse = false;
-            await oldFile.save();
+    if (req.body.photo && req.body.photo !== product.photo && req.body.photo !== 'no-photo.jpg') {
+        const photo = await File.findOne({name: req.body.photo});
+        if (photo) {
+            photo.inuse = true;
+            await photo.save();
+        }
+        const oldPhoto = await File.findOne({name: product.photo});
+        if (oldPhoto) {
+            oldPhoto.inuse = false;
+            await oldPhoto.save();
         }
     } else if (req.body.avatar === null) {
         updateProduct.photo = 'no-photo.jpg'
@@ -143,7 +152,6 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
 // @access    Private
 exports.deleteProduct = asyncHandler(async (req, res, next) => {
     const {restaurant} = req.user;
-
     const product = await Product.findOne({
         restaurant,
         _id: req.params.id
@@ -153,39 +161,58 @@ exports.deleteProduct = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse(`Product not found with id of ${req.params.id}`, 404));
     }
 
+    // Check if the product is in an active order or orders
     const orders = await Order.find({
         restaurant,
-        items: {
+        products: {
             $elemMatch: {
                 product: req.params.id
             }
         }
     });
 
-    const ordersIds = orders.map(order => order._id);
-
-    const activeOrders = await Table.find({
-        restaurant,
-        occupied: true,
-        $or: [
-            {activeOrders: {$in: ordersIds}},
-            {totalOrders: {$in: ordersIds}}
-        ]
-    });
-
-    if (activeOrders.length > 0) {
-        return next(new ErrorResponse(`You are not allowed to delete a product that is in an active order`, 400));
+    if (orders.length > 0) {
+        return next(new ErrorResponse(`The product is in an order`, 400));
     }
 
-    await Order.deleteMany({
-        _id: {
-            $in: ordersIds
+    const activeOrders = await ActiveOrder.find({
+        restaurant,
+        products: {
+            $elemMatch: {
+                product: req.params.id
+            }
         }
     });
 
-    await Product.deleteOne(product)
+    if (activeOrders.length > 0) {
+        return next(new ErrorResponse(`The product is in an active order`, 400));
+    }
 
-    await File.findOneAndUpdate({name: product.photo}, {inuse: false});
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        await Product.deleteOne({
+            _id: req.params.id
+        }, {
+            session
+        });
+
+        if (product.photo && product.photo !== 'no-photo.jpg') {
+            const photo = await File.findOne({name: product.photo});
+            if (photo) {
+                photo.inuse = false;
+                await photo.save({session});
+            }
+        }
+
+        await session.commitTransaction();
+    } catch (err) {
+        await session.abortTransaction();
+        return next(new ErrorResponse(`Error deleting the product with id of ${req.params.id}`, 500));
+    } finally {
+        await session.endSession();
+    }
 
     emitEventTo(`restaurant-${restaurant}`, 'deleteProduct', {
         _id: req.params.id

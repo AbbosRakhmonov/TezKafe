@@ -80,18 +80,21 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 exports.updateDetails = asyncHandler(async (req, res, next) => {
     const {id, role} = req.user
     let user;
+    let newUser;
 
     if (req.body.password) {
         delete req.body.password
     }
 
     if (role === 'director') {
-        user = await Director.findByIdAndUpdate(id, req.body, {
+        user = await Director.findOne({id})
+        newUser = await Director.findOneAndUpdate({id}, req.body, {
             new: true,
             runValidators: true
         })
     } else {
-        user = await Waiter.findByIdAndUpdate(id, req.body, {
+        user = await Waiter.findOne({id})
+        newUser = await Waiter.findOneAndUpdate({id}, req.body, {
             new: true,
             runValidators: true
         })
@@ -101,22 +104,24 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('User not found', 404));
     }
 
-    if (req.body.avatar && req.body.avatar !== user.avatar) {
-        const file = await File.findOneAndUpdate({name: req.body.avatar}, {inuse: true});
-        if (!file) {
-            return next(new ErrorResponse('File not found', 404));
+
+    if (req.body.avatar && req.body.avatar !== user.avatar && req.body.avatar !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: req.body.avatar})
+        if (newPhoto) {
+            newPhoto.inuse = true
+            await newPhoto.save()
         }
-        const oldFile = await File.findOne({name: user.avatar});
-        if (oldFile) {
-            oldFile.inuse = false;
-            await oldFile.save();
+        const oldPhoto = await File.findOne({name: user.avatar})
+        if (oldPhoto) {
+            oldPhoto.inuse = false
+            await oldPhoto.save()
         }
     } else if (req.body.avatar === null) {
-        user.avatar = 'no-photo.jpg'
-        await user.save()
+        newUser.avatar = 'no-photo.jpg'
+        await newUser.save()
     }
 
-    res.status(200).json(user);
+    res.status(200).json(newUser);
 });
 
 // @desc      Update password

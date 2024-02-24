@@ -6,6 +6,7 @@ const ArchiveOrder = require('../models/ArchiveOrder');
 const ActiveOrder = require('../models/ActiveOrder');
 const Table = require('../models/Table');
 const Director = require('../models/Director');
+const File = require('../models/File')
 const {emitEventTo} = require('../listeners/socketManager');
 const mongoose = require("mongoose");
 
@@ -48,7 +49,17 @@ exports.createWaiter = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('The phone number is already in use', 400))
     }
     req.body.restaurant = req.user.restaurant
-    await Waiter.create(req.body)
+    let newWaiter = await Waiter.create(req.body)
+    if (req.body.avatar && req.body.avatar !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: req.body.avatar});
+        if (newPhoto) {
+            newPhoto.inuse = true;
+            await newPhoto.save()
+        }
+    } else {
+        newWaiter.avatar = 'no-photo.jpg'
+        await category.save()
+    }
     const waiter = await Waiter.findOne({phone});
 
     res.status(201).json(waiter);
@@ -66,12 +77,28 @@ exports.updateWaiter = asyncHandler(async (req, res, next) => {
         );
     }
 
-    waiter = await waiter.updateOne(req.body, {
+    let newWaiter = await waiter.updateOne(req.body, {
         new: true,
         runValidators: true
     });
 
-    res.status(200).json(waiter);
+    if (req.body.avatar && req.body.avatar !== waiter.avatar && req.body.avatar !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: req.body.avatar})
+        if (newPhoto) {
+            newPhoto.inuse = true
+            await newPhoto.save()
+        }
+        const oldPhoto = await File.findOne({name: waiter.avatar});
+        if (oldPhoto) {
+            oldPhoto.inuse = false
+            await oldPhoto.save()
+        }
+    } else if (req.body.avatar === null) {
+        newWaiter.photo = 'no-photo.jpg'
+        await newWaiter.save()
+    }
+
+    res.status(200).json(newWaiter);
 });
 
 // @desc      Delete waiter
@@ -86,15 +113,40 @@ exports.deleteWaiter = asyncHandler(async (req, res, next) => {
             new ErrorResponse(`Waiter not found with id of ${req.params.id}`, 404)
         );
     }
+
+    const tables = await Table.find({waiter: req.params.id});
+
+    if (tables.length > 0) {
+        return next(new ErrorResponse('Waiter has tables', 400));
+    }
+
+    // transactions
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        await Promise.all([
-            Order.deleteMany({waiter: req.params.id, restaurant}),
-            ArchiveOrder.deleteMany({waiter: req.params.id, restaurant}),
-            Table.deleteMany({waiter: req.params.id, restaurant}),
-            Waiter.deleteOne({_id: req.params.id, restaurant})
-        ]);
+        const photo = await File.findOne({name: category.photo});
+
+        if (photo) {
+            photo.inuse = false
+            await photo.save({session})
+        }
+
+        //     remove orders
+        await Order.deleteMany({waiter: req.params.id}, {session});
+        //     remove active orders
+        await ActiveOrder.deleteMany({waiter: req.params.id}, {session});
+        //     remove archive orders
+        await ArchiveOrder.deleteMany({waiter: req.params.id}, {session});
+        //     remove waiter
+        await Waiter.findByIdAndDelete(req.params.id, {session});
+
+        await session.commitTransaction();
     } catch (e) {
+        await session.abortTransaction();
         return next(new ErrorResponse(e, 500));
+    } finally {
+        await session.endSession();
     }
 
     res.status(200).json({});
