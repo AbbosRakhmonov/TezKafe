@@ -9,7 +9,6 @@ const {
     closeTable,
     getTable,
     callWaiter,
-    loginToTable
 } = require('../controllers/table');
 const {protect, isDirectorAtRestaurant, isDirectorOrWaiterAtRestaurant} = require('../middleware/auth');
 
@@ -25,8 +24,7 @@ router.route('/:id')
     .delete(protect, isDirectorAtRestaurant, deleteTable);
 
 router.route('/code/:id')
-    .post(loginToTable)
-    .put(setCodeToTable);
+    .post(setCodeToTable)
 
 router.route('/call/:id')
     .post(callWaiter);

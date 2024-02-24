@@ -337,13 +337,14 @@ exports.setCodeToTable = asyncHandler(async (req, res, next) => {
     }
 
     if (table.occupied) {
-        return next(new ErrorResponse(`You are not allowed to set a code to an occupied table`, 401));
+        if (table.code !== code) {
+            return next(new ErrorResponse(`You entered the wrong code`, 400));
+        }
+    } else {
+        table.code = code;
+        table.occupied = true;
+        await table.save();
     }
-
-    table.code = code;
-    table.occupied = true;
-
-    await table.save();
 
     if (table.activeOrders.length !== 0) {
         table.activeOrders = table.activeOrders[0];
@@ -359,58 +360,6 @@ exports.setCodeToTable = asyncHandler(async (req, res, next) => {
 
     res.status(200).json(table);
 });
-
-// @desc      Login to table
-// @route     POST /api/v1/tables/code/:id
-// @access    Private
-exports.loginToTable = asyncHandler(async (req, res, next) => {
-    const {code} = req.body;
-    const {id} = req.params;
-
-    let table = await Table.findOne({
-        _id: id,
-        code,
-    })
-        .select('+code')
-        .populate('waiter typeOfTable')
-        .populate({
-            path: 'activeOrders',
-            populate: {
-                path: 'products.product',
-                model: 'Product'
-            }
-        })
-        .populate({
-            path: 'totalOrders',
-            populate: {
-                path: 'products.product',
-                model: 'Product'
-            }
-        })
-
-
-    if (!table) {
-        return next(new ErrorResponse(`Table not found with id of ${id}`, 404));
-    }
-
-    if (!table.occupied) {
-        return next(new ErrorResponse(`You are not allowed to login to an unoccupied table`, 401));
-    }
-
-    if (table.activeOrders.length !== 0) {
-        table.activeOrders = table.activeOrders[0];
-    } else {
-        table.activeOrders = null
-    }
-
-    if (table.totalOrders.length !== 0) {
-        table.totalOrders = table.totalOrders[0];
-    } else {
-        table.totalOrders = null
-    }
-
-    res.status(200).json(table);
-})
 
 // @desc      Call waiter
 // @route     POST /api/v1/tables/call/:restaurant/:id
