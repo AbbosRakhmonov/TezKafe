@@ -95,7 +95,8 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
             restaurant,
             table,
             waiter: tableData.waiter,
-            products: basket.products
+            products: [],
+            totalPrice: 0
         });
     }
 
@@ -103,6 +104,7 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     await activeOrder.save();
 
     basket.products = [];
+    basket.totalPrice = 0;
     await basket.save();
 
     if (!tableData.hasActiveOrder) {
