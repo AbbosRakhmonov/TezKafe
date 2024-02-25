@@ -167,7 +167,7 @@ exports.addProductToBasket = asyncHandler(async (req, res, next) => {
         restaurant,
         _id: table,
         code
-    })
+    }).select('+code')
 
     if (!tableData)
         return next(new ErrorResponse('Table not found', 404));
@@ -184,7 +184,8 @@ exports.addProductToBasket = asyncHandler(async (req, res, next) => {
 
     basket.products.push({
         product,
-        quantity
+        quantity,
+        price: 0
     });
 
     await basket.save();
