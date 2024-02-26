@@ -437,7 +437,7 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             throw new ErrorResponse('Table not found', 404);
         }
 
-        if (table.activeOdres.length !== 0) {
+        if (table.activeOrders.length !== 0) {
             table.activeOrders = table.activeOrders[0];
         } else {
             table.activeOrders = null
