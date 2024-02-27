@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("./async");
 const ErrorResponse = require("../utils/errorResponse");
 const Waiter = require("../models/Waiter");
+const mongoose = require("mongoose");
 
 const validateToken = async (token) => {
     if (!token) {
@@ -94,15 +95,15 @@ exports.isDirectorAtRestaurant = asyncHandler(async (req, res, next) => {
 // Check if the authenticated user is the waiter of the restaurant
 exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
     if (req.user.role !== 'admin') {
-        const {restaurant: restaurantId} = req.user
-        if (!restaurantId) {
+        const {restaurant} = req.user
+        if (!restaurant) {
             return next(
                 new ErrorResponse(`Please provide a restaurant id`, 400),
             );
         }
         const waiter = await Waiter.findOne({
-            user: req.user.id,
-            restaurant: restaurantId,
+            _id: new mongoose.Types.ObjectId(req.user.id),
+            restaurant: new mongoose.Types.ObjectId(restaurant)
         });
         if (!waiter) {
             return next(
