@@ -93,6 +93,7 @@ exports.isDirectorAtRestaurant = asyncHandler(async (req, res, next) => {
 });
 // Check if the authenticated user is the waiter of the restaurant
 exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
+    console.log(req.user)
     if (req.user.role !== 'admin') {
         const {restaurant: restaurantId} = req.user
         if (!restaurantId) {
@@ -107,10 +108,9 @@ exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
             );
         }
         if (!restaurant.waiters.some(waiter => waiter._id.equals(req.user.id))) {
-            let data = JSON.stringify(restaurant.waiters)
             return next(
                 new ErrorResponse(
-                    `User ${req.user.id} is not authorized to access this route with data ${data}`,
+                    `User ${req.user.id} is not authorized to access this route`,
                     403,
                 ),
             );
