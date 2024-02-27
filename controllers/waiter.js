@@ -220,21 +220,15 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide a table', 400));
     }
 
-    let table = await Table.aggregate([
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(req.body.table),
-                restaurant: new mongoose.Types.ObjectId(restaurant)
-            }
-        },
-        {$addFields: {waiter: "$waiter", call: "$call", callId: "$callId"}}
-    ]);
+    let table = await Table.findOne({
+        restaurant,
+        _id: req.body.table
+    })
 
-    if (!table || table.length === 0) {
+    if (!table) {
         return next(new ErrorResponse('Table not found with id of ' + req.body.table, 404));
     }
 
-    table = table[0]; // As aggregate returns an array, we need to get the first element
 
     if (table.waiter) {
         return next(new ErrorResponse('Table is already occupied', 400));
