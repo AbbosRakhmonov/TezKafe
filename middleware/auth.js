@@ -22,6 +22,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
     const token = req.cookies.tezkafe_token || req.headers.authorization?.split(' ')[1];
     try {
         req.user = await validateToken(token)
+        console.log(req.user)
         next();
     } catch (err) {
         return next(err);
@@ -95,7 +96,7 @@ exports.isDirectorAtRestaurant = asyncHandler(async (req, res, next) => {
 // Check if the authenticated user is the waiter of the restaurant
 exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
     if (req.user.role !== 'admin') {
-        const {restaurant, id} = req.user
+        const {restaurant} = req.user
         if (!restaurant) {
             return next(
                 new ErrorResponse(`Please provide a restaurant id`, 400),
