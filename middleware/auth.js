@@ -200,5 +200,5 @@ exports.socketMiddleware = async (socket, next) => {
         socket.table = table
         next();
     }
-    next(new ErrorResponse("Stranger", 401));
+    next(new Error("invalid"));
 };
