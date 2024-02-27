@@ -264,6 +264,8 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
     await order.save();
 
     activeOrder.hasActiveOrder = false;
+    activeOrder.products = [];
+    activeOrder.totalPrice = 0;
     await activeOrder.save();
 
     res.status(200).json(order);
