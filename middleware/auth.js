@@ -185,15 +185,12 @@ exports.socketMiddleware = async (socket, next) => {
     let token = socket.handshake.query.token;
     let restaurant = socket.handshake.query.restaurant;
     let table = socket.handshake.query.table;
-    console.log(token, socket.handshake)
     if (token) {
         try {
-            socket.user = await promisify(jwt.verify)(
-                token,
-                process.env.JWT_SECRET,
-            );
+            socket.user = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
         } catch (err) {
             console.log(err);
+            next(new Error(err));
         }
     }
     if (restaurant && table) {
