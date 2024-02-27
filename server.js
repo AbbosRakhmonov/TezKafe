@@ -16,7 +16,6 @@ const hpp = require("hpp");
 const compression = require("compression");
 const {
     socketMiddleware,
-    protect,
 } = require("./middleware/auth");
 const bodyParser = require("body-parser");
 const dailyCleanup = require("./utils/dailyCleanup");
@@ -147,9 +146,8 @@ process.on("unhandledRejection", (err) => {
 const io = new Server(server, {
     cookie: true,
     cors: {
-        origin: process.env.WHITE_LIST.split(","),
+        origin: process.env.development ? '*' : process.env.WHITE_LIST.split(","),
         credentials: true,
-        methods: ["GET"],
     },
     pingInterval: 10000,
     pingTimeout: 5000,
