@@ -107,10 +107,10 @@ exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
             );
         }
         if (!restaurant.waiters.some(waiter => waiter._id.equals(req.user.id))) {
-            console.log(restaurant)
+            let data = JSON.stringify(restaurant.waiters)
             return next(
                 new ErrorResponse(
-                    `User ${req.user.id} is not authorized to access this route`,
+                    `User ${req.user.id} is not authorized to access this route with data ${data}`,
                     403,
                 ),
             );
