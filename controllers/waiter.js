@@ -362,7 +362,6 @@ exports.getCalls = asyncHandler(async (req, res, next) => {
     const calls = await Table.find({
         restaurant,
         $or: [
-            {waiter: id},
             {call: 'accepted', callId: id},
             {call: 'calling', callId: null}
         ]
