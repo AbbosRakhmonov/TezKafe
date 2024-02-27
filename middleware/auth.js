@@ -106,7 +106,8 @@ exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
                 new ErrorResponse(`Restaurant not found with id of ${restaurantId}`, 404),
             );
         }
-        if (!restaurant.waiters.some(waiter => waiter._id.equals(req.user.restaurant))) {
+        console.log(restaurant)
+        if (!restaurant.waiters.some(waiter => waiter._id.toString() === req.user.id.toString())) {
             return next(
                 new ErrorResponse(
                     `User ${req.user.id} is not authorized to access this route`,
