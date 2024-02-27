@@ -188,9 +188,10 @@ exports.socketMiddleware = async (socket, next) => {
     if (token) {
         try {
             socket.user = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            return next();
         } catch (err) {
             console.log(err);
-            next(new Error(err));
+            return next(new Error(err));
         }
     }
     if (restaurant && table) {
@@ -198,5 +199,5 @@ exports.socketMiddleware = async (socket, next) => {
         socket.table = table
         next();
     }
-    next(new Error("invalid"));
+    return next(new Error("invalid"));
 };
