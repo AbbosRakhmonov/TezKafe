@@ -159,15 +159,16 @@ exports.getWaiterTables = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
     const {type} = req.query;
 
-    if (!type) {
-        return next(new ErrorResponse('Please provide a type of table', 400));
-    }
-
-    let tables = await Table.find({
+    let filter = {
         restaurant,
         waiter: id,
-        typeOfTable: type
-    })
+    }
+
+    if (type) {
+        filter.typeOfTable = type
+    }
+
+    let tables = await Table.find(filter)
         .populate('typeOfTable')
 
     res.status(200).json(tables);
