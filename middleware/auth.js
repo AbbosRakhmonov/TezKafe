@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("./async");
 const ErrorResponse = require("../utils/errorResponse");
 const Waiter = require("../models/Waiter");
+const Restaurant = require("../models/Restaurant");
 
 const validateToken = async (token) => {
     if (!token) {

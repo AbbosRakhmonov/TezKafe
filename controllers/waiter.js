@@ -157,7 +157,6 @@ exports.deleteWaiter = asyncHandler(async (req, res, next) => {
 // @access    Private
 exports.getWaiterTables = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user;
-    console.log(restaurant)
     const {type} = req.query;
 
     if (!type) {
