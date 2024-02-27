@@ -2,7 +2,7 @@ const {promisify, log} = require("util");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("./async");
 const ErrorResponse = require("../utils/errorResponse");
-const Restaurant = require("../models/Restaurant");
+const Waiter = require("../models/Waiter");
 
 const validateToken = async (token) => {
     if (!token) {
@@ -21,7 +21,6 @@ exports.protect = asyncHandler(async (req, res, next) => {
     const token = req.cookies.tezkafe_token || req.headers.authorization?.split(' ')[1];
     try {
         req.user = await validateToken(token)
-        console.log(req.user)
         next();
     } catch (err) {
         return next(err);
@@ -101,13 +100,11 @@ exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
                 new ErrorResponse(`Please provide a restaurant id`, 400),
             );
         }
-        const restaurant = await Restaurant.findById(restaurantId).populate('waiters');
-        if (!restaurant) {
-            return next(
-                new ErrorResponse(`Restaurant not found with id of ${restaurantId}`, 404),
-            );
-        }
-        if (!restaurant.waiters.some(waiter => waiter._id.equals(req.user.id))) {
+        const waiter = await Waiter.findOne({
+            user: req.user.id,
+            restaurant: restaurantId,
+        });
+        if (!waiter) {
             return next(
                 new ErrorResponse(
                     `User ${req.user.id} is not authorized to access this route`,
@@ -132,7 +129,8 @@ exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
     }
 
     next();
-});
+})
+;
 // Check if the authenticated user is the director or a waiter of the restaurant
 exports.isDirectorOrWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
     if (req.user.role !== 'admin') {
