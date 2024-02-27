@@ -28,12 +28,12 @@ router
 
 // /?table=tableId
 router
-    .route('/orders')
+    .route('/tables/orders')
     .get(protect, isWaiterAtRestaurant, getWaiterOrders);
 
 // /?type=type&occupied=occupied
 router
-    .route('/tables')
+    .route('/:id/tables')
     .get(protect, isWaiterAtRestaurant, getWaiterTables)
     .post(protect, isWaiterAtRestaurant, occupyTable);
 
