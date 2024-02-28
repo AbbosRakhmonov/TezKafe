@@ -360,7 +360,7 @@ exports.getCalls = asyncHandler(async (req, res, next) => {
             {call: 'accepted', callId: id},
             {call: 'calling', callId: null}
         ]
-    }).select('name');
+    });
 
     res.status(200).json(calls);
 });
