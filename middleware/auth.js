@@ -197,7 +197,7 @@ exports.socketMiddleware = async (socket, next) => {
     if (restaurant && table) {
         socket.restaurant = restaurant
         socket.table = table
-        next();
+        return next();
     }
     return next(new Error("invalid"));
 };
