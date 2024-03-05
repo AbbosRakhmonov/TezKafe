@@ -77,10 +77,17 @@ exports.updateWaiter = asyncHandler(async (req, res, next) => {
         );
     }
 
-    let newWaiter = await waiter.updateOne(req.body, {
+    const {password, ...body} = req.body;
+
+    let newWaiter = await waiter.updateOne(body, {
         new: true,
         runValidators: true
     });
+
+    if (password) {
+        waiter.password = password;
+        await waiter.save();
+    }
 
     if (req.body.avatar && req.body.avatar !== waiter.avatar && req.body.avatar !== 'no-photo.jpg') {
         const newPhoto = await File.findOne({name: req.body.avatar})
