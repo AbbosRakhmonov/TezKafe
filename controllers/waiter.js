@@ -58,7 +58,7 @@ exports.createWaiter = asyncHandler(async (req, res, next) => {
         }
     } else {
         newWaiter.avatar = 'no-photo.jpg'
-        await category.save()
+        await newWaiter.save()
     }
     const waiter = await Waiter.findOne({phone});
 
