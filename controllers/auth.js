@@ -82,19 +82,17 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
     let user;
     let newUser;
 
-    if (req.body.password) {
-        delete req.body.password
-    }
+    const {password, ...body} = req.body;
 
     if (role === 'director') {
         user = await Director.findOne({id})
-        newUser = await Director.findOneAndUpdate({id}, req.body, {
+        newUser = await Director.findOneAndUpdate({id}, body, {
             new: true,
             runValidators: true
         })
     } else {
         user = await Waiter.findOne({id})
-        newUser = await Waiter.findOneAndUpdate({id}, req.body, {
+        newUser = await Waiter.findOneAndUpdate({id}, body, {
             new: true,
             runValidators: true
         })
@@ -105,8 +103,8 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
     }
 
 
-    if (req.body.avatar && req.body.avatar !== user.avatar && req.body.avatar !== 'no-photo.jpg') {
-        const newPhoto = await File.findOne({name: req.body.avatar})
+    if (body.avatar && body.avatar !== user.avatar && body.avatar !== 'no-photo.jpg') {
+        const newPhoto = await File.findOne({name: body.avatar})
         if (newPhoto) {
             newPhoto.inuse = true
             await newPhoto.save()
@@ -116,7 +114,7 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
             oldPhoto.inuse = false
             await oldPhoto.save()
         }
-    } else if (req.body.avatar === null) {
+    } else if (body.avatar === null) {
         newUser.avatar = 'no-photo.jpg'
         await newUser.save()
     }
