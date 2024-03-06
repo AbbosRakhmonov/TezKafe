@@ -132,7 +132,7 @@ exports.deleteWaiter = asyncHandler(async (req, res, next) => {
     session.startTransaction();
 
     try {
-        const photo = await File.findOne({name: category.photo});
+        const photo = await File.findOne({name: waiter.photo});
 
         if (photo) {
             photo.inuse = false
@@ -140,13 +140,13 @@ exports.deleteWaiter = asyncHandler(async (req, res, next) => {
         }
 
         //     remove orders
-        await Order.deleteMany({waiter: req.params.id}, {session});
+        await Order.deleteMany({waiter: req.params.id}).session(session);
         //     remove active orders
-        await ActiveOrder.deleteMany({waiter: req.params.id}, {session});
+        await ActiveOrder.deleteMany({waiter: req.params.id}).session(session);
         //     remove archive orders
-        await ArchiveOrder.deleteMany({waiter: req.params.id}, {session});
+        await ArchiveOrder.deleteMany({waiter: req.params.id}).session(session);
         //     remove waiter
-        await Waiter.findByIdAndDelete(req.params.id, {session});
+        await Waiter.findByIdAndDelete(req.params.id).session(session);
 
         await session.commitTransaction();
     } catch (e) {
