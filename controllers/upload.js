@@ -51,7 +51,7 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
                 const metadata = await sharp(fileBuffer).metadata();
                 await sharp(fileBuffer)
                     .resize({
-                        width: metadata.width / 2,
+                        width: Math.round(metadata.width / 2),
                         fit: sharp.fit.inside,
                         withoutEnlargement: true
                     })
