@@ -48,8 +48,14 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
             if (chunkNumber === totalChunks - 1) {
                 const fileBuffer = fs.readFileSync(filePath);
                 let newFileName = fileName.split('.').slice(0, -1).join('.') + '.webp'
+                const metadata = await sharp(fileBuffer).metadata();
                 await sharp(fileBuffer)
-                    .webp({lossless: true})
+                    .resize({
+                        width: metadata.width / 2,
+                        fit: sharp.fit.inside,
+                        withoutEnlargement: true
+                    })
+                    .webp({lossless: true, quality: 60, alphaQuality: 80, force: false, minSize: true})
                     .toFile(path.join(uploadsDir, newFileName))
                 await File.create({name: newFileName})
                 fs.rmSync(tempFilePath, {recursive: true, force: true});
