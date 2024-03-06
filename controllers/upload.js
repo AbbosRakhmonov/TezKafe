@@ -50,9 +50,6 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
                 let newFileName = fileName.split('.').slice(0, -1).join('.') + '.jpg'
                 const metadata = await sharp(fileBuffer).metadata();
                 await sharp(fileBuffer)
-                    .resize({
-                        width: Math.round(metadata.width / 2),
-                    })
                     .jpeg({
                         quality: 80, // Adjust quality as needed (0 to 100)
                         progressive: true, // Use progressive (interlace) scan for JPEG
