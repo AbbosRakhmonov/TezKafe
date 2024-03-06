@@ -259,6 +259,10 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
         id: table._id,
         waiter: id
     });
+    emitEventTo(`directors-${restaurant}`, 'tableOccupied', {
+        id: table._id,
+        waiter: id
+    });
 
     res.status(200).json(table);
 });

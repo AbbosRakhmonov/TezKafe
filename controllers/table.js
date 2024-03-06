@@ -296,6 +296,9 @@ exports.deleteTable = asyncHandler(async (req, res, next) => {
         emitEventTo(`waiters-${restaurant}`, 'deletedTable', {
             id: req.params.id
         });
+        emitEventTo(`directors-${restaurant}`, 'deletedTable', {
+            id: req.params.id
+        });
 
         res.status(200).json({});
     } catch (e) {
@@ -405,7 +408,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
 // @route     POST /api/v1/tables/:id
 // @access    Private
 exports.closeTable = asyncHandler(async (req, res, next) => {
-    const {restaurant} = req.user
+    const {restaurant, role} = req.user
     const {id} = req.params;
 
     const session = await mongoose.startSession();
@@ -488,11 +491,13 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
 
         await session.commitTransaction();
 
-        if (waiter) {
-            emitEventTo(waiter, 'closeTable', table);
+        if (waiter && role !== 'waiter') {
+            emitEventTo(waiter, 'closedTable', table);
         } else {
-            emitEventTo('waiters-' + restaurant, 'closedTable', table);
+            emitEventTo('directors-' + restaurant, 'closedTable', table);
         }
+
+        emitEventTo('waiters-' + restaurant, 'closedTable', table);
 
         res.status(200).json(table);
     } catch (error) {
