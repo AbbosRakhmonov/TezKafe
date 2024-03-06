@@ -49,7 +49,7 @@ exports.uploadFile = asyncHandler(async (req, res, next) => {
                 const fileBuffer = fs.readFileSync(filePath);
                 let newFileName = fileName.split('.').slice(0, -1).join('.') + '.webp'
                 await sharp(fileBuffer)
-                    .webp({lossless: true, quality: 90})
+                    .webp({lossless: true})
                     .toFile(path.join(uploadsDir, newFileName))
                 await File.create({name: newFileName})
                 fs.rmSync(tempFilePath, {recursive: true, force: true});
