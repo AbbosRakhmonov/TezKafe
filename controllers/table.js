@@ -456,19 +456,12 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
         //     throw new ErrorResponse('Table has active orders', 400);
         // }
 
-        let waiter = table.waiter;
-        if (!table.setWaiterByAdmin) {
-            table.waiter = null
-            waiter = null
-            table.callId = null
-        }
-
         if (table.activeOrders?.totalPrice !== 0 && table.totalOrders?.totalPrice !== 0) {
             await ArchiveOrder.create({
                 table: table._id,
                 waiter: table.waiter,
                 totalOrders: table.totalOrders?.products || [],
-                totalPrice: table.totalOrders?.totalPrice,
+                totalPrice: table.totalOrders?.totalPrice || 0,
                 restaurant,
             }, {session});
 
@@ -478,6 +471,13 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             basket.products = [];
             basket.totalPrice = 0;
             await basket.save({session});
+        }
+
+        let waiter = table.waiter;
+        if (!table.setWaiterByAdmin) {
+            table.waiter = null
+            waiter = null
+            table.callId = null
         }
 
         table.occupied = false
