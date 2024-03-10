@@ -452,9 +452,9 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             table.totalOrders = null
         }
 
-        // if (table.hasActiveOrder) {
-        //     throw new ErrorResponse('Table has active orders', 400);
-        // }
+        if (table.hasActiveOrder) {
+            throw new ErrorResponse('Table has active orders', 400);
+        }
 
         if (table.activeOrders?.totalPrice !== 0 && table.totalOrders?.totalPrice !== 0) {
             await ArchiveOrder.create([{
