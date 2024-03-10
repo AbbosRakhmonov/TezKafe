@@ -16,37 +16,25 @@ const ArchiveOrderSchema = new mongoose.Schema({
             product: {
                 name: {
                     type: String,
-                    required: [true, 'Please add a name'],
                     trim: true,
                 },
                 price: {
                     type: Number,
-                    required: [true, 'Please add a price'],
-                    validate: {
-                        validator: function (v) {
-                            return v > 0;
-                        },
-                        message: props => `${props.value} is not a valid price!`
-                    }
                 },
                 unit: {
                     type: String,
-                    required: [true, 'Please add a unit']
                 },
             },
             quantity: {
                 type: Number,
-                required: true
             },
             price: {
                 type: Number,
-                required: true
             }
         },
     ],
     totalPrice: {
         type: Number,
-        required: true
     },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
