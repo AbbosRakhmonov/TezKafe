@@ -18,7 +18,6 @@ const ArchiveOrderSchema = new mongoose.Schema({
                     type: String,
                     required: [true, 'Please add a name'],
                     trim: true,
-                    unique: true
                 },
                 price: {
                     type: Number,
