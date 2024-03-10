@@ -457,13 +457,13 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
         // }
 
         if (table.activeOrders?.totalPrice !== 0 && table.totalOrders?.totalPrice !== 0) {
-            await ArchiveOrder.create({
+            await ArchiveOrder.create([{
                 table: table._id,
                 waiter: table.waiter,
                 totalOrders: table.totalOrders?.products || [],
                 totalPrice: table.totalOrders?.totalPrice || 0,
                 restaurant,
-            }, {session});
+            }], {session})
 
             await ActiveOrder.deleteMany({table: table._id}).session(session);
             await Order.deleteMany({table: table._id}).session(session);
