@@ -189,6 +189,7 @@ exports.socketMiddleware = async (socket, next) => {
     if (token) {
         try {
             socket.user = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            console.log(socket.user)
             return next();
         } catch (err) {
             console.log(err);
