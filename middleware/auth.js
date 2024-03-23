@@ -186,7 +186,6 @@ exports.socketMiddleware = async (socket, next) => {
     let restaurant = socket.handshake.query.restaurant;
     let table = socket.handshake.query.table;
 
-    console.log(socket, token, restaurant, table)
     if (token) {
         try {
             socket.user = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
