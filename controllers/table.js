@@ -395,7 +395,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
     await table.save();
 
     if (table.waiter) {
-        emitEventTo(table.waiter.toString(), 'callWaiter', table);
+        emitEventTo(table.waiter, 'callWaiter', table);
     } else {
         emitEventTo(`waiters-${table.restaurant}`, 'callWaiter', table);
     }
