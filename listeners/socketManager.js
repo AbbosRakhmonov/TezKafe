@@ -14,6 +14,7 @@ const initializeSocket = (socketIO) => {
                 case 'waiter':
                     socket.join(`waiters-${socket.user.restaurant}`)
                     socket.join(`${socket.user._id}`)
+                    console.log(socket.user._id)
                     break
                 default:
                     break
