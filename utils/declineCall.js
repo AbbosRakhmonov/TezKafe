@@ -5,9 +5,10 @@ const {emitEventTo} = require('../listeners/socketManager');
 const declineCall = async () => {
     // find the table callTime is more than or equal to 3 minutes ago
     const tables = await Table.find({
-        callTime: {
-            $lte: new Date(Date.now() - 3 * 60 * 1000)
-        },
+        $or: [
+            {callTime: {$lte: new Date(Date.now() - 1 * 60 * 1000)}, call: 'calling'},
+            {callTime: null, call: 'calling'}
+        ]
     });
     if (tables.length > 0) {
         for (let table of tables) {
@@ -22,7 +23,7 @@ const declineCall = async () => {
                 emitEventTo(`directors-${table.restaurant}`, 'activeCall', {
                     _id: table._id,
                 });
-                continue;
+                break;
             }
             table.callId = null;
             table.callTime = null;
@@ -40,6 +41,6 @@ const declineCall = async () => {
 }
 
 // Schedule the task to run every 3 minutes
-cron.schedule('*/3 * * * *', declineCall);
+cron.schedule('*/1 * * * *', declineCall);
 
 module.exports = declineCall;

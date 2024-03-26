@@ -353,6 +353,9 @@ exports.goToTable = asyncHandler(async (req, res, next) => {
     emitEventTo(`table-${table._id}`, 'callAccepted', {
         _id: table._id,
     });
+    emitEventTo(`waiters-${table.restaurant}`, 'callAccepted', {
+        _id: table._id,
+    });
     emitEventTo(`directors-${restaurant}`, 'callAccepted', table);
 
     res.status(200).json(table);
