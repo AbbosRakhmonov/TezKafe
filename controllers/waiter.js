@@ -249,7 +249,10 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
     table.call = 'none'
     table.callId = id
 
-    await Table.findByIdAndUpdate(table._id, table);
+    await Table.findByIdAndUpdate(table._id, table, {
+        new: true,
+        runValidators: true
+    });
 
     emitEventTo(`table-${table._id}`, 'tableOccupied', {
         id: table._id,
