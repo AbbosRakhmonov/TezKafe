@@ -17,7 +17,7 @@ const declineCall = async () => {
             table.call = 'none';
             if (table.waiter) {
                 //     emit event and stop
-                emitEventTo(table.waiter, 'activeCall', {
+                emitEventTo(table.waiter.toString(), 'activeCall', {
                     _id: table._id,
                 });
                 emitEventTo(`directors-${table.restaurant}`, 'activeCall', {
