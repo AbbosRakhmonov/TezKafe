@@ -57,7 +57,7 @@ exports.createTable = asyncHandler(async (req, res, next) => {
         table.totalOrders = null;
 
         if (waiter) {
-            emitEventTo(waiter, 'newTable', table);
+            emitEventTo(waiter.toString(), 'newTable', table);
         } else {
             emitEventTo(`waiters-${restaurant}`, 'newTable', table);
         }
@@ -242,7 +242,7 @@ exports.updateTable = asyncHandler(async (req, res, next) => {
     }
 
     if (waiter) {
-        emitEventTo(waiter, 'updateTable', updatedTable);
+        emitEventTo(waiter.toString(), 'updateTable', updatedTable);
     } else {
         emitEventTo(`waiters-${restaurant}`, 'updateTable', updatedTable);
     }
@@ -498,12 +498,12 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
         await session.commitTransaction();
 
         if (waiter && role !== 'waiter') {
-            emitEventTo(waiter, 'closedTable', table);
+            emitEventTo(waiter.toString(), 'closedTable', table);
         } else {
-            emitEventTo('directors-' + restaurant, 'closedTable', table);
+            emitEventTo(`directors-${restaurant}`, 'closedTable', table);
         }
 
-        emitEventTo('waiters-' + restaurant, 'closedTable', table);
+        emitEventTo(`waiters-${restaurant}`, 'closedTable', table);
 
         res.status(200).json(table);
     } catch (error) {

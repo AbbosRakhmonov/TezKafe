@@ -87,7 +87,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
     })
 
     if (!existTable.hasActiveOrder) {
-        emitEventTo(id, 'newActiveOrder', activeOrder);
+        emitEventTo(id.toString(), 'newActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'newActiveOrder', activeOrder);
     }
     existTable.hasActiveOrder = true;
@@ -146,7 +146,7 @@ exports.updateOrder = asyncHandler(async (req, res, next) => {
     if (activeOrder.products.length === 0) {
         activeOrder.hasActiveOrder = false;
         await activeOrder.save();
-        emitEventTo(id, 'noActiveOrder', activeOrder);
+        emitEventTo(id.toString(), 'noActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'noActiveOrder', activeOrder);
     }
 
@@ -193,7 +193,7 @@ exports.deleteOrder = asyncHandler(async (req, res, next) => {
     if (activeOrder.products.length === 0) {
         activeOrder.hasActiveOrder = false;
         await activeOrder.save();
-        emitEventTo(id, 'noActiveOrder', activeOrder);
+        emitEventTo(id.toString(), 'noActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'noActiveOrder', activeOrder);
     }
 

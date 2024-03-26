@@ -108,7 +108,7 @@ exports.makeOrder = asyncHandler(async (req, res, next) => {
     await basket.save();
 
     if (!tableData.hasActiveOrder) {
-        emitEventTo(tableData.waiter, 'newActiveOrder', activeOrder);
+        emitEventTo(tableData.waiter.toString(), 'newActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'newActiveOrder', activeOrder);
     }
 
