@@ -396,8 +396,11 @@ exports.declineCall = asyncHandler(async (req, res, next) => {
 
 
     table.call = 'none'
-    table.callId = null
     table.callTime = null
+
+    if (!table.waiter) {
+        table.callId = null
+    }
 
     await table.save();
 
