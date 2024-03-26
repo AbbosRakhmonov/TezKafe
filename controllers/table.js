@@ -10,6 +10,7 @@ const qr = require('qr-image');
 const fs = require('fs');
 const path = require('path');
 const mongoose = require("mongoose");
+const moment = require('moment-timezone');
 
 // @desc      Create table
 // @route     POST /api/v1/tables
@@ -396,6 +397,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
     }
 
     table.call = 'calling'
+    table.callTime = moment().tz('Asia/Tashkent').format()
     await table.save();
 
     if (table.waiter) {
