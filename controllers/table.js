@@ -26,7 +26,8 @@ exports.createTable = asyncHandler(async (req, res, next) => {
             name,
             waiter,
             setWaiterByAdmin: !!waiter,
-            restaurant
+            restaurant,
+            callId: waiter
         }], {session})
 
         table = table[0];
