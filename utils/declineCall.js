@@ -15,17 +15,18 @@ const declineCall = async () => {
             // Update the table here as needed
             // For example, let's set the call to 'none'
             table.call = 'none';
-            if (table.waiter) {
+            if (!table.waiter) {
                 //     emit event and stop
-                emitEventTo(table.waiter.toString(), 'activeCall', {
-                    _id: table._id,
-                });
-                emitEventTo(`directors-${table.restaurant}`, 'activeCall', {
-                    _id: table._id,
-                });
-                break;
+                // emitEventTo(table.waiter.toString(), 'activeCall', {
+                //     _id: table._id,
+                // });
+                // emitEventTo(`directors-${table.restaurant}`, 'activeCall', {
+                //     _id: table._id,
+                // });
+                // break;
+                table.callId = null;
             }
-            table.callId = null;
+
             table.callTime = null;
             await table.save();
 
@@ -33,9 +34,15 @@ const declineCall = async () => {
             emitEventTo(`table-${table._id}`, 'callDeclined', {
                 _id: table._id,
             });
-            emitEventTo(`waiters-${table.restaurant}`, 'callDeclined', {
-                _id: table._id,
-            });
+            if (table.waiter) {
+                emitEventTo(table.waiter.toString(), 'callDeclined', {
+                    _id: table._id,
+                });
+            } else {
+                emitEventTo(`waiters-${table.restaurant}`, 'callDeclined', {
+                    _id: table._id,
+                });
+            }
         }
     }
 }
