@@ -292,7 +292,7 @@ exports.goToTable = asyncHandler(async (req, res, next) => {
         table.callId = id
     }
 
-    table.callTime = new Date()
+    // table.callTime = new Date()
 
     await table.save();
 
