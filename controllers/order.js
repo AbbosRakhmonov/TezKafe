@@ -144,8 +144,8 @@ exports.updateOrder = asyncHandler(async (req, res, next) => {
     await activeOrder.save();
 
     if (activeOrder.products.length === 0) {
-        activeOrder.hasActiveOrder = false;
-        await activeOrder.save();
+        existTable.hasActiveOrder = false;
+        await existTable.save()
         emitEventTo(id.toString(), 'noActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'noActiveOrder', activeOrder);
     }
@@ -191,8 +191,8 @@ exports.deleteOrder = asyncHandler(async (req, res, next) => {
     await activeOrder.save();
 
     if (activeOrder.products.length === 0) {
-        activeOrder.hasActiveOrder = false;
-        await activeOrder.save();
+        existTable.hasActiveOrder = false;
+        await existTable.save()
         emitEventTo(id.toString(), 'noActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'noActiveOrder', activeOrder);
     }
@@ -263,10 +263,14 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
 
     await order.save();
 
-    activeOrder.hasActiveOrder = false;
+    existTable.hasActiveOrder = false;
     activeOrder.products = [];
     activeOrder.totalPrice = 0;
-    await activeOrder.save();
+
+    await Promise([
+        activeOrder.save(),
+        existTable.save()
+    ])
 
     res.status(200).json(order);
 });
