@@ -247,7 +247,6 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
 
     table.waiter = id;
     table.call = 'none'
-    table.callId = null
 
     await Table.findByIdAndUpdate(table._id, table);
 

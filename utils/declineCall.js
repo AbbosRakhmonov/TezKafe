@@ -40,7 +40,7 @@ const declineCall = async () => {
     }
 }
 
-// Schedule the task to run every 3 minutes
+// Schedule the task to run every 1 minutes
 cron.schedule('*/1 * * * *', declineCall);
 
 module.exports = declineCall;
