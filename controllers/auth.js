@@ -67,7 +67,7 @@ exports.logout = asyncHandler(async (req, res, next) => {
 // @route     GET /api/v1/auth/me
 // @access    Private
 exports.getMe = asyncHandler(async (req, res, next) => {
-    let user = await Director.findById(req.user.id)
+    let user = await Director.findById(req.user.id).populate('restaurant')
     if (!user) {
         user = await Waiter.findById(req.user.id)
     }
