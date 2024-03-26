@@ -334,6 +334,10 @@ exports.setCodeToTable = asyncHandler(async (req, res, next) => {
                 model: 'Product'
             }
         })
+        .populate({
+            path: 'restaurant',
+            select: 'name photo'
+        })
 
     if (!table) {
         return next(new ErrorResponse(`Table not found with id of ${id}`, 404));
