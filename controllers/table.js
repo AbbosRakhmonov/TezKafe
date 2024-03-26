@@ -398,6 +398,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
 
     table.call = 'calling'
     table.callTime = moment().tz('Asia/Tashkent').format()
+    console.log(table.callTime)
     await table.save();
 
     if (table.waiter) {
