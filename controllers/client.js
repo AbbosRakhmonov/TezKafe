@@ -174,6 +174,10 @@ exports.addProductToBasket = asyncHandler(async (req, res, next) => {
     if (!tableData)
         return next(new ErrorResponse('Table not found', 404));
 
+    if (!table.waiter) {
+        return next(new ErrorResponse('Ofitsant topilmadi', 404));
+    }
+
     const basket = await Basket.findOne({
         restaurant,
         table,
