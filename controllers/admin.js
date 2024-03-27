@@ -136,7 +136,7 @@ exports.registerRestaurant = asyncHandler(async (req, res, next) => {
             await restaurant.save({session})
         }
         director.restaurant = restaurant[0]._id;
-        let newDirector = await Director.create([{...director}], {session});
+        let [newDirector] = await Director.create([{...director}], {session})
         if (director.avatar && director.avatar !== 'no-photo.jpg') {
             const newPhoto = await File.findOne({name: director.avatar});
             if (newPhoto) {
@@ -216,7 +216,7 @@ exports.updateRestaurant = asyncHandler(async (req, res, next) => {
             await updatedRestaurant.save({session})
         }
         if (director) {
-            let directorDoc = await Director.findById(restaurant.director)
+            let directorDoc = await Director.findOne({restaurant: restaurant._id})
             if (!directorDoc) {
                 return next(new ErrorResponse(`Director not found`, 404));
             }
@@ -294,7 +294,7 @@ exports.deleteRestaurant = asyncHandler(async (req, res, next) => {
             directorPhoto.inuse = false;
             await directorPhoto.save({session});
         }
-        await restaurant.remove({session});
+        await Restaurant.deleteOne({_id: req.params.id}, {session});
 
         await session.commitTransaction();
 
