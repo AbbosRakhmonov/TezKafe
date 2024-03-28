@@ -279,11 +279,14 @@ exports.goToTable = asyncHandler(async (req, res, next) => {
     let table = await Table.findOne({
         restaurant,
         _id: req.params.id,
-        waiter: id
     })
 
     if (!table) {
         return next(new ErrorResponse('Table not found', 404));
+    }
+
+    if (table.callId && table.callId !== id) {
+        return next(new ErrorResponse('Table is already accepted by another waiter', 400));
     }
 
     table.call = 'accepted'
