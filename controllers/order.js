@@ -250,7 +250,7 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
     });
 
     if (order) {
-        order.products = activeOrder.products;
+        order.products = order.products.concat(activeOrder.products);
     } else {
         order = await Order.create({
             table,
