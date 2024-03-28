@@ -267,10 +267,7 @@ exports.approveOrder = asyncHandler(async (req, res, next) => {
     activeOrder.products = [];
     activeOrder.totalPrice = 0;
 
-    await new Promise([
-        activeOrder.save(),
-        existTable.save()
-    ])
+    await Promise.all([existTable.save(), activeOrder.save()]);
 
     res.status(200).json(order);
 });
