@@ -101,6 +101,7 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
 exports.updateOrder = asyncHandler(async (req, res, next) => {
     const {restaurant, id} = req.user
     const {table, product, quantity} = req.body;
+    console.log(product, quantity)
 
     if (!restaurant) {
         return next(new ErrorResponse('Please provide a restaurant', 400));
