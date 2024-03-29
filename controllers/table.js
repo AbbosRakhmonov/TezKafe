@@ -168,6 +168,8 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         }
     }
 
+    console.log(tables)
+
     res.status(200).json(tables);
 });
 
