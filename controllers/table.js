@@ -134,7 +134,7 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     }
     if (occupied !== undefined) {
         const isOccupied = JSON.parse(occupied);
-        matchStage.$match.waiter = isOccupied ? {$ne: null} : null;
+        matchStage.$match.waiter = isOccupied ? null : {$ne: null};
     }
 
     const tables = await Table.find(matchStage.$match)
