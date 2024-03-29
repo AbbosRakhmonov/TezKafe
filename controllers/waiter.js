@@ -286,7 +286,7 @@ exports.goToTable = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Table not found', 404));
     }
 
-    if (table.callId && table.callId !== id) {
+    if (table.callId && table.callId.toString() !== id.toString()) {
         return next(new ErrorResponse('Table is already accepted by another waiter', 400));
     }
 
