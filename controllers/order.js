@@ -131,7 +131,7 @@ exports.updateOrder = asyncHandler(async (req, res, next) => {
     }
 
     if (quantity <= 0) {
-        activeOrder.products = activeOrder.products.filter(p => p.product !== product);
+        activeOrder.products = activeOrder.products.filter(p => p.product.toString() !== product.toString());
     } else {
         activeOrder.products = activeOrder.products.map(p => {
             if (p.product.toString() === product.toString()) {
