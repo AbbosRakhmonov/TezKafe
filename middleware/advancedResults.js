@@ -50,8 +50,6 @@ const advancedResults = (model, populate) => async (req, res, next) => {
     queryStr = JSON.parse(queryStr);
     queryStr = flattenAndConvertValues(queryStr);
 
-    console.log(queryStr);
-
     // Handle searching if 'q' parameter is present
     if (req.query.q && req.query.searchFields) {
         const searchFields = req.query.searchFields.split(" "); // Specify the field to search if needed

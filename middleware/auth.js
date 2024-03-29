@@ -94,7 +94,6 @@ exports.isDirectorAtRestaurant = asyncHandler(async (req, res, next) => {
 });
 // Check if the authenticated user is the waiter of the restaurant
 exports.isWaiterAtRestaurant = asyncHandler(async (req, res, next) => {
-    console.log(req.user)
     if (req.user.role !== 'admin') {
         const {restaurant} = req.user
         if (!restaurant) {
