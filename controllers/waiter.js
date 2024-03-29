@@ -169,6 +169,7 @@ exports.getWaiterTables = asyncHandler(async (req, res, next) => {
     let filter = {
         restaurant,
         waiter: id,
+        occupied: true
     }
 
     if (type) {
@@ -237,11 +238,11 @@ exports.occupyTable = asyncHandler(async (req, res, next) => {
     }
 
 
-    if (table.waiter) {
+    if (table.waiter && table.waiter.toString() !== id.toString()) {
         return next(new ErrorResponse('Table is already occupied', 400));
     }
 
-    if (table.call === 'accepted' && table.callId !== id) {
+    if (table.call === 'accepted' && table.callId.toString() !== id.toString()) {
         return next(new ErrorResponse('Table is already accepted by another waiter', 400));
     }
 
