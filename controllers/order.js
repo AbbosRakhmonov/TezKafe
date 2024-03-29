@@ -89,6 +89,9 @@ exports.createOrder = asyncHandler(async (req, res, next) => {
         emitEventTo(id.toString(), 'newActiveOrder', activeOrder);
         emitEventTo(`directors-${restaurant}`, 'newActiveOrder', activeOrder);
     }
+    if (!existTable.occupied) {
+        existTable.occupied = true;
+    }
     existTable.hasActiveOrder = true;
     await existTable.save();
 
