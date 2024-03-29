@@ -414,7 +414,7 @@ exports.callWaiter = asyncHandler(async (req, res, next) => {
 // @route     POST /api/v1/tables/:id
 // @access    Private
 exports.closeTable = asyncHandler(async (req, res, next) => {
-    const {restaurant, role} = req.user
+    const {restaurant} = req.user
     const {id} = req.params;
 
     const session = await mongoose.startSession();
@@ -458,11 +458,9 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             table.totalOrders = null
         }
 
-        if (table.hasActiveOrder) {
-            throw new ErrorResponse('Table has active orders', 400);
-        }
+        await ActiveOrder.deleteMany({table: table._id}).session(session);
 
-        if (table.activeOrders?.totalPrice !== 0 && table.totalOrders?.totalPrice !== 0) {
+        if (table.totalOrders?.totalPrice !== 0) {
             await ArchiveOrder.create([{
                 table: table._id,
                 waiter: table.waiter,
@@ -471,13 +469,13 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
                 restaurant,
             }], {session})
 
-            await ActiveOrder.deleteMany({table: table._id}).session(session);
             await Order.deleteMany({table: table._id}).session(session);
-            const basket = await Basket.findOne({table: table._id}).session(session);
-            basket.products = [];
-            basket.totalPrice = 0;
-            await basket.save({session});
         }
+
+        const basket = await Basket.findOne({table: table._id}).session(session);
+        basket.products = [];
+        basket.totalPrice = 0;
+        await basket.save({session});
 
         let waiter = table.waiter;
         if (!table.setWaiterByAdmin) {
@@ -485,7 +483,6 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
             waiter = null
             table.callId = null
         }
-
         table.occupied = false
         table.call = 'none'
         table.callTime = null
@@ -496,13 +493,13 @@ exports.closeTable = asyncHandler(async (req, res, next) => {
 
         await session.commitTransaction();
 
-        if (waiter && role !== 'waiter') {
+        if (waiter) {
             emitEventTo(waiter.toString(), 'closedTable', table);
         } else {
             emitEventTo(`directors-${restaurant}`, 'closedTable', table);
-        }
+            emitEventTo(`waiters-${restaurant}`, 'closedTable', table);
 
-        emitEventTo(`waiters-${restaurant}`, 'closedTable', table);
+        }
 
         res.status(200).json(table);
     } catch (error) {
