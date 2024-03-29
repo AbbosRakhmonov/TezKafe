@@ -28,6 +28,10 @@ const ActiveOrderSchema = new mongoose.Schema({
             price: {
                 type: Number,
                 required: true
+            },
+            createdAt: {
+                type: Date,
+                default: moment().tz('Asia/Tashkent').format()
             }
         }
     ],
@@ -65,6 +69,8 @@ ActiveOrderSchema.pre('save', async function (next) {
         const existProduct = newProducts.find(p => p.product.toString() === product.product.toString());
         if (existProduct) {
             existProduct.quantity += product.quantity;
+            existProduct.createdAt = moment().tz('Asia/Tashkent').format();
+
         } else {
             newProducts.push(product);
         }
