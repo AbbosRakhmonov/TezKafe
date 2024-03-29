@@ -117,11 +117,11 @@ exports.getTable = asyncHandler(async (req, res, next) => {
 });
 
 // @desc      Get all tables
-// @route     GET /api/v1/tables?type=type&occupied=occupied
+// @route     GET /api/v1/tables?type=type
 // @access    Private
 exports.getTables = asyncHandler(async (req, res, next) => {
-    const {restaurant} = req.user;
-    const {type, occupied} = req.query;
+    const {restaurant, role, id} = req.user;
+    const {type} = req.query;
     let matchStage = {
         $match: {
             restaurant: new mongoose.Types.ObjectId(restaurant) // Ensure restaurant field is an ObjectId
@@ -132,10 +132,19 @@ exports.getTables = asyncHandler(async (req, res, next) => {
     if (type) {
         matchStage.$match.typeOfTable = new mongoose.Types.ObjectId(type);
     }
-    if (occupied !== undefined) {
-        const isOccupied = JSON.parse(occupied);
-        matchStage.$match.waiter = isOccupied ? null : {$ne: null};
+
+    if (role === 'waiter') {
+        matchStage.$match.$or = [
+            {
+                waiter: new mongoose.Types.ObjectId(id),
+                occupied: false
+            },
+            {
+                waiter: null,
+            }
+        ]
     }
+
 
     const tables = await Table.find(matchStage.$match)
         .populate('waiter typeOfTable')
