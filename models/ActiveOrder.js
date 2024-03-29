@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Product = require('./Product');
 const ErrorResponse = require('../utils/errorResponse');
+const moment = require('moment-timezone');
 
 const ActiveOrderSchema = new mongoose.Schema({
     table: {
@@ -39,6 +40,10 @@ const ActiveOrderSchema = new mongoose.Schema({
         ref: 'Restaurant',
         required: true
     },
+    createdAt: {
+        type: Date,
+        default: moment().tz('Asia/Tashkent').format()
+    }
 }, {
     timestamps: true
 });

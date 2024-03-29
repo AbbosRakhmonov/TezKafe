@@ -145,7 +145,6 @@ exports.getTables = asyncHandler(async (req, res, next) => {
         ]
     }
 
-
     const tables = await Table.find(matchStage.$match)
         .populate('waiter typeOfTable')
         .populate({

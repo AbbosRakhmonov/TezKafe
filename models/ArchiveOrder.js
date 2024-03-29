@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 
 const ArchiveOrderSchema = new mongoose.Schema({
     table: {
@@ -41,6 +42,10 @@ const ArchiveOrderSchema = new mongoose.Schema({
         ref: 'Restaurant',
         required: true
     },
+    createdAt: {
+        type: Date,
+        default: moment().tz('Asia/Tashkent').format()
+    }
 }, {
     timestamps: true
 });
