@@ -43,6 +43,10 @@ const OrderSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: moment().tz('Asia/Tashkent').format()
+    },
+    updatedAt: {
+        type: Date,
+        default: moment().tz('Asia/Tashkent').format()
     }
 }, {
     timestamps: true
